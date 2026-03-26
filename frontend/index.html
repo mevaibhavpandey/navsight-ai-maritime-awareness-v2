@@ -166,11 +166,13 @@
                 <button class="btn btn-icon" onclick="toggleMapPanel()"><i class="fas fa-chevron-right" id="panel-chevron"></i></button>
               </div>
               <div id="map-panel-body">
-                <label class="toggle-row"><input type="checkbox" id="lyr-vessels" checked onchange="toggleLayer('vessels',this.checked)"><span>Vessels</span></label>
-                <label class="toggle-row"><input type="checkbox" id="lyr-trails" checked onchange="toggleLayer('trails',this.checked)"><span>Vessel Trails</span></label>
-                <label class="toggle-row"><input type="checkbox" id="lyr-boundary" checked onchange="toggleLayer('boundary',this.checked)"><span>200-NM Boundary</span></label>
-                <label class="toggle-row"><input type="checkbox" id="lyr-piracy" checked onchange="toggleLayer('piracy',this.checked)"><span>Piracy Zones</span></label>
-                <label class="toggle-row"><input type="checkbox" id="lyr-cluster" checked onchange="toggleLayer('cluster',this.checked)"><span>Cluster Markers</span></label>
+                <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Map Layers</div>
+                <label class="toggle-row"><input type="checkbox" checked onchange="toggleLayer('boundary',this.checked)"><span>India 200-NM Boundary</span></label>
+                <label class="toggle-row" style="background:rgba(0,180,216,0.08);border-radius:6px;padding:4px 6px"><input type="checkbox" checked onchange="toggleLayer('vessels',this.checked)"><span>All Vessels</span></label>
+                <label class="toggle-row"><input type="checkbox" checked onchange="toggleLayer('patrol',this.checked)"><span>Patrol Zones</span></label>
+                <label class="toggle-row"><input type="checkbox" checked onchange="toggleLayer('exercise',this.checked)"><span>Exercise Areas</span></label>
+                <label class="toggle-row"><input type="checkbox" checked onchange="toggleLayer('piracy',this.checked)"><span>Piracy Zones</span></label>
+                <label class="toggle-row"><input type="checkbox" checked onchange="toggleLayer('checkpoints',this.checked)"><span>Security Checkpoints</span></label>
                 <div class="divider"></div>
                 <div class="map-stat"><i class="fas fa-ship"></i> <span id="map-vessel-count">0</span> vessels</div>
                 <div class="map-stat"><i class="fas fa-eye"></i> <span id="map-viewport-count">0</span> in view</div>
@@ -204,6 +206,12 @@
               <option>Tanker</option>
               <option>Fishing Vessel</option>
               <option>Passenger Ship</option>
+              <option>Research Vessel</option>
+              <option>High Speed Craft</option>
+              <option>Special Craft</option>
+              <option>Sailing Vessel</option>
+              <option>Tug</option>
+              <option>Wing In Ground</option>
               <option>Unknown</option>
             </select>
           </div>
@@ -291,19 +299,19 @@
           <div class="analytics-grid">
             <div class="card glass">
               <div class="card-header"><i class="fas fa-chart-pie"></i> Vessel Types</div>
-              <canvas id="chart-types" height="220"></canvas>
+              <canvas id="chart-types"></canvas>
             </div>
             <div class="card glass">
               <div class="card-header"><i class="fas fa-chart-bar"></i> Speed Distribution</div>
-              <canvas id="chart-speed" height="220"></canvas>
+              <canvas id="chart-speed"></canvas>
             </div>
             <div class="card glass">
               <div class="card-header"><i class="fas fa-chart-line"></i> Vessel Count Over Time</div>
-              <canvas id="chart-timeline" height="220"></canvas>
+              <canvas id="chart-timeline"></canvas>
             </div>
             <div class="card glass">
               <div class="card-header"><i class="fas fa-flag"></i> Top Flag States</div>
-              <canvas id="chart-flags" height="220"></canvas>
+              <canvas id="chart-flags"></canvas>
             </div>
           </div>
         </div>
@@ -347,7 +355,7 @@
               <div class="form-group">
                 <label>Map Tile Style</label>
                 <select id="cfg-tiles" onchange="changeTiles(this.value)">
-                  <option value="satellite">Satellite (Esri)</option>
+                  <option value="satellite" selected>Satellite (Esri)</option>
                   <option value="dark">Dark (CartoDB)</option>
                   <option value="osm">OpenStreetMap</option>
                 </select>
@@ -382,6 +390,6 @@
 
   <script src="https://unpkg.com/mammoth@1.4.0/mammoth.browser.min.js"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

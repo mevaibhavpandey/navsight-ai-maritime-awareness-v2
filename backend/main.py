@@ -1,13 +1,17 @@
 """
-NavSight AI — Backend Entry Point
+ORVMS — Backend Entry Point
 Run: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+Then open: http://localhost:8000
 """
 import asyncio
 import logging
+import os
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app import config
 from app.api import router, broadcast_loop
@@ -55,6 +59,22 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+# Serve frontend at root — fixes file:// WebSocket block issue
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+if os.path.exists(FRONTEND_DIR):
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(os.path.join(FRONTEND_DIR, 'index.html'))
+
+    @app.get("/{filename}")
+    async def serve_file(filename: str):
+        path = os.path.join(FRONTEND_DIR, filename)
+        if os.path.exists(path):
+            return FileResponse(path)
+        return FileResponse(os.path.join(FRONTEND_DIR, 'index.html'))
 
 
 @app.on_event("startup")
