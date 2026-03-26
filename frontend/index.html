@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ocean Risk and Vessel Monitoring System</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-bg-anim"></div>
+    <div class="login-card glass">
+      <div class="login-logo">
+        <i class="fas fa-anchor"></i>
+        <span>ORVMS</span>
+      </div>
+      <p class="login-subtitle">Ocean Risk and Vessel Monitoring System</p>
+      <div class="form-group">
+        <label>Officer ID</label>
+        <input type="text" id="login-user" value="DEMO001" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label>Security Code</label>
+        <input type="password" id="login-pass" value="demo123" />
+      </div>
+      <button class="btn btn-primary btn-full" onclick="login()">
+        <i class="fas fa-shield-halved"></i> Access Command Center
+      </button>
+      <p class="login-hint">Demo: DEMO001 / demo123</p>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main App -->
+  <div id="app" class="app hidden">
+    <!-- Header -->
+    <header class="header glass">
+      <div class="header-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <div class="brand">
+          <i class="fas fa-anchor"></i>
+          <span>ORVMS</span>
+        </div>
+        <div class="conn-status" id="conn-status">
+          <span class="dot dot-connecting"></span>
+          <span id="conn-label">Connecting…</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="header-stat"><i class="fas fa-ship"></i> <span id="hdr-vessels">0</span></span>
+        <span class="header-stat alert-stat"><i class="fas fa-bell"></i> <span id="hdr-alerts">0</span></span>
+        <span class="header-time" id="header-time"></span>
+        <button class="btn btn-icon" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-circle-half-stroke"></i></button>
+        <button class="btn btn-icon btn-danger-soft" onclick="logout()" title="Logout"><i class="fas fa-right-from-bracket"></i></button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- Sidebar -->
+      <nav class="sidebar" id="sidebar">
+        <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+          <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+        </a>
+        <a class="nav-item" data-page="map" onclick="navigate('map')">
+          <i class="fas fa-map"></i><span>Live Map</span>
+        </a>
+        <a class="nav-item" data-page="vessels" onclick="navigate('vessels')">
+          <i class="fas fa-ship"></i><span>Vessels</span>
+        </a>
+        <a class="nav-item" data-page="add-vessel" onclick="navigate('add-vessel')" style="padding-left:28px;font-size:12px">
+          <i class="fas fa-plus"></i><span>Add Vessel</span>
+        </a>
+        <a class="nav-item" data-page="alerts" onclick="navigate('alerts')">
+          <i class="fas fa-triangle-exclamation"></i><span>Alerts</span>
+          <span class="badge" id="nav-alert-badge">0</span>
+        </a>
+        <div class="nav-divider"></div>
+        <a class="nav-item" data-page="analytics" onclick="navigate('analytics')">
+          <i class="fas fa-chart-line"></i><span>Analytics</span>
+        </a>
+        <div class="nav-divider"></div>
+        <a class="nav-item" data-page="settings" onclick="navigate('settings')">
+          <i class="fas fa-gear"></i><span>Settings</span>
+        </a>
+        <div class="nav-divider"></div>
+        <a class="nav-item" data-page="upload" onclick="navigate('upload')">
+          <i class="fas fa-upload"></i><span>File Upload</span>
+        </a>
+      </nav>
+
+      <!-- Pages -->
+      <main class="content" id="content">
+
+        <!-- DASHBOARD -->
+        <div id="page-dashboard" class="page active">
+          <div class="page-header">
+            <h2>Maritime Operations Dashboard</h2>
+            <p>Ocean Risk and Vessel Monitoring System — Live AIS powered</p>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi-card glass">
+              <div class="kpi-icon"><i class="fas fa-ship"></i></div>
+              <div class="kpi-body"><span class="kpi-val" id="kpi-total">0</span><span class="kpi-label">Total Vessels</span></div>
+            </div>
+            <div class="kpi-card glass kpi-green">
+              <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+              <div class="kpi-body"><span class="kpi-val" id="kpi-friendly">0</span><span class="kpi-label">Friendly</span></div>
+            </div>
+            <div class="kpi-card glass kpi-red">
+              <div class="kpi-icon"><i class="fas fa-circle-exclamation"></i></div>
+              <div class="kpi-body"><span class="kpi-val" id="kpi-suspicious">0</span><span class="kpi-label">Suspicious</span></div>
+            </div>
+            <div class="kpi-card glass kpi-yellow">
+              <div class="kpi-icon"><i class="fas fa-bell"></i></div>
+              <div class="kpi-body"><span class="kpi-val" id="kpi-alerts">0</span><span class="kpi-label">Active Alerts</span></div>
+            </div>
+            <div class="kpi-card glass kpi-blue">
+              <div class="kpi-icon"><i class="fas fa-satellite-dish"></i></div>
+              <div class="kpi-body"><span class="kpi-val" id="kpi-zones">3</span><span class="kpi-label">Active Zones</span></div>
+            </div>
+          </div>
+          <div class="dash-grid">
+            <div class="card glass dash-map-card">
+              <div class="card-header"><i class="fas fa-map-location-dot"></i> Maritime Overview</div>
+              <div id="mini-map"></div>
+            </div>
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-bell"></i> Recent Alerts</div>
+              <div id="dash-alerts" class="scroll-list"></div>
+            </div>
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-ship"></i> Active Vessels</div>
+              <div id="dash-vessels" class="scroll-list"></div>
+            </div>
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-signal"></i> System Status</div>
+              <div class="status-grid" id="sys-status">
+                <div class="status-row"><span>AIS Feed</span><span class="badge-status green" id="st-feed">Live</span></div>
+                <div class="status-row"><span>WebSocket</span><span class="badge-status" id="st-ws">—</span></div>
+                <div class="status-row"><span>Last Update</span><span id="st-update">—</span></div>
+                <div class="status-row"><span>Provider</span><span id="st-provider">—</span></div>
+                <div class="status-row"><span>Vessels Tracked</span><span id="st-count">0</span></div>
+                <div class="status-row"><span>Uptime</span><span class="badge-status green">99.8%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVE MAP -->
+        <div id="page-map" class="page">
+          <div class="map-wrap">
+            <div id="main-map"></div>
+            <div class="map-panel glass" id="map-panel">
+              <div class="map-panel-header">
+                <span><i class="fas fa-layer-group"></i> Layers</span>
+                <button class="btn btn-icon" onclick="toggleMapPanel()"><i class="fas fa-chevron-right" id="panel-chevron"></i></button>
+              </div>
+              <div id="map-panel-body">
+                <label class="toggle-row"><input type="checkbox" id="lyr-vessels" checked onchange="toggleLayer('vessels',this.checked)"><span>Vessels</span></label>
+                <label class="toggle-row"><input type="checkbox" id="lyr-trails" checked onchange="toggleLayer('trails',this.checked)"><span>Vessel Trails</span></label>
+                <label class="toggle-row"><input type="checkbox" id="lyr-boundary" checked onchange="toggleLayer('boundary',this.checked)"><span>200-NM Boundary</span></label>
+                <label class="toggle-row"><input type="checkbox" id="lyr-piracy" checked onchange="toggleLayer('piracy',this.checked)"><span>Piracy Zones</span></label>
+                <label class="toggle-row"><input type="checkbox" id="lyr-cluster" checked onchange="toggleLayer('cluster',this.checked)"><span>Cluster Markers</span></label>
+                <div class="divider"></div>
+                <div class="map-stat"><i class="fas fa-ship"></i> <span id="map-vessel-count">0</span> vessels</div>
+                <div class="map-stat"><i class="fas fa-eye"></i> <span id="map-viewport-count">0</span> in view</div>
+              </div>
+            </div>
+            <!-- Vessel detail popup -->
+            <div class="vessel-detail-panel glass" id="vessel-detail" style="display:none">
+              <button class="close-btn" onclick="closeVesselDetail()"><i class="fas fa-xmark"></i></button>
+              <div id="vessel-detail-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VESSELS TABLE -->
+        <div id="page-vessels" class="page">
+          <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <h2>Vessel Registry</h2>
+              <p>All tracked vessels with live AIS data</p>
+            </div>
+            <button class="btn btn-primary" onclick="navigate('add-vessel')"><i class="fas fa-plus"></i> Add Vessel</button>
+          </div>
+          <div class="table-toolbar">
+            <input type="text" id="vessel-search" placeholder="Search by name, MMSI, flag…" oninput="filterVessels()" />
+            <select id="vessel-type-filter" onchange="filterVessels()">
+              <option value="">All Types</option>
+              <option>Naval Vessel</option>
+              <option>Coast Guard</option>
+              <option>Cargo Ship</option>
+              <option>Container Ship</option>
+              <option>Tanker</option>
+              <option>Fishing Vessel</option>
+              <option>Passenger Ship</option>
+              <option>Unknown</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>MMSI</th><th>Name</th><th>Type</th><th>Flag</th>
+                  <th>Lat</th><th>Lon</th><th>Speed (kn)</th><th>Heading</th><th>Updated</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="vessels-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ADD VESSEL PAGE -->
+        <div id="page-add-vessel" class="page">
+          <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <h2>Add Vessel Manually</h2>
+              <p>Register a vessel into the tracking system</p>
+            </div>
+            <button class="btn btn-secondary" onclick="navigate('vessels')"><i class="fas fa-arrow-left"></i> Back</button>
+          </div>
+          <div class="card glass" style="max-width:640px">
+            <form id="add-vessel-form" onsubmit="addManualVessel(event)">
+              <div class="form-row">
+                <div class="form-group"><label>MMSI</label><input type="text" name="mmsi" placeholder="e.g. 419001234" /></div>
+                <div class="form-group"><label>Vessel Name *</label><input type="text" name="vname" placeholder="e.g. INS Vikrant" required /></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Latitude * (decimal)</label><input type="number" name="lat" step="0.0001" placeholder="e.g. 15.5" required /></div>
+                <div class="form-group"><label>Longitude * (decimal)</label><input type="number" name="lon" step="0.0001" placeholder="e.g. 69.2" required /></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Speed (knots)</label><input type="number" name="speed" step="0.1" min="0" placeholder="0" /></div>
+                <div class="form-group"><label>Heading (0–360°)</label><input type="number" name="heading" min="0" max="360" placeholder="0" /></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Vessel Type</label>
+                  <select name="vtype">
+                    <option>Naval Vessel</option><option>Coast Guard</option>
+                    <option selected>Cargo Ship</option><option>Container Ship</option>
+                    <option>Tanker</option><option>Fishing Vessel</option>
+                    <option>Passenger Ship</option><option>Unknown</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Flag State</label><input type="text" name="flag" placeholder="e.g. India" /></div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:8px">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add to Map</button>
+                <button type="reset" class="btn btn-secondary"><i class="fas fa-rotate-left"></i> Reset</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ALERTS -->
+        <div id="page-alerts" class="page">
+          <div class="page-header">
+            <h2>Alert Center</h2>
+            <p>Real-time event-driven maritime alerts</p>
+          </div>
+          <div class="alerts-toolbar">
+            <select id="alert-filter" onchange="filterAlerts()">
+              <option value="">All Priorities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <button class="btn btn-secondary" onclick="clearAcknowledged()"><i class="fas fa-check-double"></i> Clear Acknowledged</button>
+          </div>
+          <div id="alerts-grid" class="alerts-grid"></div>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div id="page-analytics" class="page">
+          <div class="page-header">
+            <h2>Analytics</h2>
+            <p>Traffic density, speed distribution, vessel type breakdown</p>
+          </div>
+          <div class="analytics-grid">
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-chart-pie"></i> Vessel Types</div>
+              <canvas id="chart-types" height="220"></canvas>
+            </div>
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-chart-bar"></i> Speed Distribution</div>
+              <canvas id="chart-speed" height="220"></canvas>
+            </div>
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-chart-line"></i> Vessel Count Over Time</div>
+              <canvas id="chart-timeline" height="220"></canvas>
+            </div>
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-flag"></i> Top Flag States</div>
+              <canvas id="chart-flags" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="page-settings" class="page">
+          <div class="page-header">
+            <h2>Settings</h2>
+            <p>Configure backend connection and display preferences</p>
+          </div>
+          <div class="settings-grid">
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-server"></i> Backend Connection</div>
+              <div class="form-group">
+                <label>Backend URL</label>
+                <input type="text" id="cfg-backend-url" value="http://localhost:8000" />
+              </div>
+              <div class="form-group">
+                <label>WebSocket URL</label>
+                <input type="text" id="cfg-ws-url" value="ws://localhost:8000/ws/vessels" />
+              </div>
+              <div class="form-group">
+                <label>Poll Interval (seconds)</label>
+                <input type="number" id="cfg-poll" value="10" min="5" max="60" />
+              </div>
+              <button class="btn btn-primary" onclick="applySettings()"><i class="fas fa-save"></i> Apply & Reconnect</button>
+            </div>
+            <div class="card glass">
+              <div class="card-header"><i class="fas fa-palette"></i> Display</div>
+              <div class="form-group">
+                <label>Theme</label>
+                <select id="cfg-theme" onchange="setTheme(this.value)">
+                  <option value="dark">Dark (Default)</option>
+                  <option value="light">Light</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Trail Length (positions)</label>
+                <input type="number" id="cfg-trail" value="20" min="5" max="50" />
+              </div>
+              <div class="form-group">
+                <label>Map Tile Style</label>
+                <select id="cfg-tiles" onchange="changeTiles(this.value)">
+                  <option value="satellite">Satellite (Esri)</option>
+                  <option value="dark">Dark (CartoDB)</option>
+                  <option value="osm">OpenStreetMap</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FILE UPLOAD PAGE -->
+        <div id="page-upload" class="page">
+          <div class="page-header">
+            <h2>File Upload & Processing</h2>
+            <p>Upload maritime datasets — vessels, zones, checkpoints extracted automatically</p>
+          </div>
+          <div class="card glass" style="max-width:700px">
+            <div id="upload-drop" class="upload-drop" onclick="document.getElementById('file-input-new').click()"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="handleFileDrop(event)">
+              <i class="fas fa-cloud-arrow-up" style="font-size:2.5rem;color:var(--accent);margin-bottom:12px"></i>
+              <div style="font-size:1rem;font-weight:600;color:var(--text)">Drop files here or click to upload</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:6px">.txt .md .csv .xlsx .docx .json .jpg .png</div>
+              <input type="file" id="file-input-new" multiple accept=".txt,.md,.csv,.xlsx,.docx,.json,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleFileSelect(event)" />
+            </div>
+            <div id="upload-results" style="margin-top:14px;font-size:13px;display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/mammoth@1.4.0/mammoth.browser.min.js"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
