@@ -12,10 +12,12 @@ logger = logging.getLogger(__name__)
 TRAIL_MAX_LENGTH = 20  # keep last N positions per vessel
 
 
+from app import config
+
 class VesselStore:
-    def __init__(self, max_vessels: int = 2000):
+    def __init__(self, max_vessels: int = None):
         self._vessels: dict[str, Vessel] = {}
-        self._max = max_vessels
+        self._max = max_vessels or config.MAX_VESSELS
 
     def upsert(self, vessel: Vessel) -> bool:
         """

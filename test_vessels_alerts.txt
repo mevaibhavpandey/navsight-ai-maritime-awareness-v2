@@ -1,0 +1,179 @@
+Date: 2025-11-17
+Time: 01:00 UTC
+Vessel Type: Naval Vessel
+Reporting Unit: PNS Zulfiquar (Pakistan Navy)
+Observed Vessel: PNS Zulfiquar
+Position: 22°30'N, 63°00'E
+Heading: 090°
+Speed: 18 knots
+IMO: 9234501
+Status: Approaching Indian EEZ from west
+Remarks: Pakistani naval frigate — unfriendly, entering boundary at normal speed → HIGH alert expected
+
+Date: 2025-11-17
+Time: 01:30 UTC
+Vessel Type: Naval Vessel
+Reporting Unit: PLAN Luyang III (China Navy)
+Observed Vessel: PLAN Luyang III
+Position: 21°00'N, 88°00'E
+Heading: 270°
+Speed: 28 knots
+IMO: 9345612
+Status: Entering Bay of Bengal at high speed
+Remarks: Chinese destroyer at 28 kn inside Indian EEZ → CRITICAL alert expected
+
+Date: 2025-11-17
+Time: 02:00 UTC
+Vessel Type: Merchant Vessel
+Reporting Unit: MV Iran Shahed
+Observed Vessel: MV Iran Shahed
+Position: 15°00'N, 64°00'E
+Heading: 090°
+Speed: 14 knots
+IMO: 9456723
+Status: Transiting Arabian Sea into Indian EEZ
+Remarks: Iranian merchant — unfriendly flag, entering boundary → HIGH alert expected
+
+Date: 2025-11-17
+Time: 02:30 UTC
+Vessel Type: Naval Vessel
+Reporting Unit: IRIN Sahand (Iran Navy)
+Observed Vessel: IRIN Sahand
+Position: 10°00'N, 63°00'E
+Heading: 060°
+Speed: 30 knots
+IMO: 9567834
+Status: High speed entry into Indian EEZ
+Remarks: Iranian frigate at 30 kn entering boundary → CRITICAL alert expected
+
+Date: 2025-11-17
+Time: 03:00 UTC
+Vessel Type: Merchant Vessel
+Reporting Unit: MV North Star (Russia)
+Observed Vessel: MV North Star
+Position: 18°00'N, 61°50'E
+Heading: 090°
+Speed: 16 knots
+IMO: 9678945
+Status: Crossing into Indian EEZ from Arabian Sea
+Remarks: Russian merchant entering boundary → HIGH alert expected
+
+Date: 2025-11-17
+Time: 03:30 UTC
+Vessel Type: Merchant Vessel
+Reporting Unit: MV Atlantic Express
+Observed Vessel: MV Atlantic Express
+Position: 5°00'N, 55°00'E
+Heading: 090°
+Speed: 27 knots
+IMO: 9789056
+Status: High speed transit outside Indian EEZ
+Remarks: Fast merchant well outside boundary → LOW alert expected
+
+Date: 2025-11-17
+Time: 04:00 UTC
+Vessel Type: Merchant Vessel
+Reporting Unit: MV Pacific Runner
+Observed Vessel: MV Pacific Runner
+Position: 0°00'N, 70°00'E
+Heading: 000°
+Speed: 26 knots
+IMO: 9890167
+Status: High speed south of Indian EEZ
+Remarks: Fast vessel outside southern boundary → LOW alert expected
+
+Date: 2025-11-17
+Time: 04:30 UTC
+Vessel Type: Naval Vessel
+Reporting Unit: PLAN Type 052D
+Observed Vessel: PLAN Type 052D
+Position: 12°00'N, 92°00'E
+Heading: 270°
+Speed: 29 knots
+IMO: 9901278
+Status: High speed inside Andaman EEZ
+Remarks: Chinese warship at 29 kn inside Andaman boundary → CRITICAL alert expected
+
+Date: 2025-11-17
+Time: 05:00 UTC
+Vessel Type: Fishing Vessel
+Reporting Unit: FV Karachi Fisher
+Observed Vessel: FV Karachi Fisher
+Position: 20°00'N, 65°00'E
+Heading: 090°
+Speed: 9 knots
+Registry: Pakistan
+Status: Entering Indian EEZ from northwest
+Remarks: Pakistani fishing vessel entering boundary → HIGH alert expected
+
+Date: 2025-11-17
+Time: 05:30 UTC
+Vessel Type: Naval Vessel
+Reporting Unit: INS Vikramaditya
+Observed Vessel: INS Vikramaditya
+Position: 15°00'N, 72°00'E
+Heading: 180°
+Speed: 22 knots
+IMO: 9012389
+Status: Indian carrier operating inside EEZ
+Remarks: Indian Navy — friendly, NO alert expected
+
+Date: 2025-11-17
+Time: 06:00 UTC
+Vessel Type: Naval Vessel
+Reporting Unit: USS Carl Vinson (USA)
+Observed Vessel: USS Carl Vinson
+Position: 12°00'N, 75°00'E
+Heading: 090°
+Speed: 28 knots
+IMO: 9123490
+Status: US carrier inside Indian EEZ
+Remarks: USA — friendly flag, NO alert expected even at high speed
+
+Date: 2025-11-17
+Time: 06:30 UTC
+Vessel Type: Merchant Vessel
+Reporting Unit: MV Beijing Trader
+Observed Vessel: MV Beijing Trader
+Position: 8°00'N, 85°00'E
+Heading: 315°
+Speed: 13 knots
+IMO: 9234501
+Status: Chinese merchant inside Bay of Bengal EEZ
+Remarks: Chinese merchant entering boundary → HIGH alert expected
+
+Date: 2025-11-17
+Time: 07:00 UTC
+Vessel Type: Research Vessel
+Reporting Unit: Xiang Yang Hong 03 (China)
+Observed Vessel: Xiang Yang Hong 03
+Position: 9°00'N, 93°00'E
+Heading: 180°
+Speed: 8 knots
+IMO: 9345612
+Status: Chinese research vessel inside Andaman EEZ
+Remarks: Chinese research ship — unfriendly, inside Andaman boundary → HIGH alert expected
+
+Date: 2025-11-17
+Time: 07:30 UTC
+Vessel Type: Merchant Vessel
+Reporting Unit: MV Hormuz Star
+Observed Vessel: MV Hormuz Star
+Position: 25°00'N, 58°00'E
+Heading: 090°
+Speed: 31 knots
+IMO: 9456723
+Status: High speed outside Indian EEZ near Gulf of Oman
+Remarks: Fast vessel well outside boundary → LOW alert expected
+
+Date: 2025-11-17
+Time: 08:00 UTC
+Vessel Type: Naval Vessel
+Reporting Unit: HMAS Sydney (Australia)
+Observed Vessel: HMAS Sydney
+Position: 14°00'N, 80°00'E
+Heading: 000°
+Speed: 26 knots
+IMO: 9567834
+Status: Australian frigate inside Indian EEZ at speed
+Remarks: Australia — friendly flag, NO alert expected
