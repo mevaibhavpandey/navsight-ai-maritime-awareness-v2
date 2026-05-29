@@ -280,6 +280,7 @@ function initApp() {
   initCharts();
   startClock();
   connectAIS();
+  initNavalResponseModule(); // Initialize naval response system
   const el = document.getElementById('cfg-trail'); if (el) el.value = CFG.trailLength;
   const ts = document.getElementById('cfg-tiles'); if (ts) ts.value = CFG.tileStyle;
 }
@@ -303,6 +304,15 @@ function navigate(page) {
     }, 50);
   }
   if (page === 'analytics') updateCharts();
+  if (page === 'weather') {
+    setTimeout(() => {
+      if (!weatherMap) {
+        initWeatherModule();
+      } else {
+        weatherMap.invalidateSize({ animate: false });
+      }
+    }, 50);
+  }
 }
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
@@ -1149,6 +1159,149 @@ function showToast(msg,type='info'){
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtTime(ts){try{return new Date(ts).toLocaleTimeString();}catch{return'—';}}
+
+// ── Naval Response Module Integration ────────────────────────────────────────
+function initNavalResponseModule() {
+  // Initialize UI
+  if (typeof navalResponseUI !== 'undefined') {
+    navalResponseUI.initialize();
+  }
+  
+  // Start the engine
+  if (typeof navalResponseEngine !== 'undefined') {
+    navalResponseEngine.start();
+    console.log('[ORVMS] Naval Response Engine initialized');
+  }
+}
+
+// ── Weather Module Integration ───────────────────────────────────────────────
+let weatherMap, weatherMapInstance;
+
+function initWeatherModule() {
+  // Initialize weather map
+  const weatherMapEl = document.getElementById('weather-map');
+  if (weatherMapEl && !weatherMap) {
+    const t = TILES[CFG.tileStyle] || TILES.satellite;
+    weatherMap = L.map('weather-map', {
+      zoomControl: true,
+      worldCopyJump: false,
+      minZoom: 2,
+    }).setView([15, 78], 4);
+    
+    L.tileLayer(t.url, { maxZoom: 18, attribution: t.attr, noWrap: true }).addTo(weatherMap);
+    
+    weatherMapInstance = new WeatherMap(weatherMap);
+    weatherMapInstance.initialize();
+    
+    // Make it globally accessible
+    window.weatherMapInstance = weatherMapInstance;
+  }
+  
+  // Render UI components
+  const searchContainer = document.getElementById('weather-search-container');
+  if (searchContainer) {
+    searchContainer.innerHTML = weatherUI.renderLocationSearch();
+  }
+  
+  const dateContainer = document.getElementById('weather-date-container');
+  if (dateContainer) {
+    dateContainer.innerHTML = weatherUI.renderDateSelector();
+  }
+  
+  // Load initial weather data
+  updateWeatherData(15, 78); // Default to India center
+}
+
+async function updateWeatherData(lat, lon) {
+  try {
+    // Fetch current weather and forecast
+    const [weather, forecast] = await Promise.all([
+      weatherService.fetchCurrentWeather(lat, lon),
+      weatherService.fetchForecast(lat, lon),
+    ]);
+    
+    // Get cyclone data
+    const cyclones = weatherService.getCycloneData();
+    
+    // Get disaster history
+    const disasters = weatherService.getDisasterHistory();
+    
+    // Update UI
+    weatherUI.renderWeatherDashboard(weather, forecast, cyclones);
+    weatherUI.renderHistoricalView(disasters);
+    
+    // Update map
+    if (weatherMapInstance) {
+      weatherMapInstance.clearAll();
+      
+      // Render cyclones
+      cyclones.forEach(cyclone => {
+        weatherMapInstance.renderCyclone(cyclone);
+      });
+      
+      // Render rainfall heatmap (demo data)
+      const rainfallData = weatherMapInstance.generateDemoRainfall(lat, lon);
+      weatherMapInstance.renderRainfallHeatmap(rainfallData);
+      
+      // Render wind patterns (demo data)
+      const windData = weatherMapInstance.generateDemoWind(lat, lon);
+      weatherMapInstance.renderWindPatterns(windData);
+      
+      // Render historical disasters
+      disasters.forEach(disaster => {
+        weatherMapInstance.renderHistoricalDisaster(disaster);
+      });
+      
+      // Center map on location
+      weatherMap.setView([lat, lon], 6);
+    }
+    
+    // Create weather alerts if risk is high
+    const riskLevel = weatherService.calculateRiskLevel(weather, cyclones);
+    if (riskLevel === 'critical' || riskLevel === 'high') {
+      cyclones.forEach(cyclone => {
+        _pushAlert(
+          'WEATHER_' + cyclone.id,
+          cyclone.name,
+          'weather_cyclone',
+          cyclone.warning,
+          riskLevel,
+          cyclone.lat,
+          cyclone.lon
+        );
+      });
+    }
+    
+  } catch (error) {
+    console.error('Weather update failed:', error);
+    showToast('Failed to load weather data', 'error');
+  }
+}
+
+function toggleWeatherLayer(layerName, visible) {
+  if (weatherMapInstance) {
+    weatherMapInstance.toggleLayer(layerName, visible);
+  }
+}
+
+async function loadHistoricalWeather(date) {
+  // For demo purposes, show historical disasters
+  const disasters = weatherService.getDisasterHistory();
+  weatherUI.renderHistoricalView(disasters);
+  
+  if (weatherMapInstance) {
+    weatherMapInstance.clearLayer('historical');
+    disasters.forEach(disaster => {
+      weatherMapInstance.renderHistoricalDisaster(disaster);
+    });
+  }
+}
+
+// Make functions globally accessible
+window.updateWeatherData = updateWeatherData;
+window.loadHistoricalWeather = loadHistoricalWeather;
+window.toggleWeatherLayer = toggleWeatherLayer;
+window.weatherUI = weatherUI;
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 if(sessionStorage.getItem('nv_user')){

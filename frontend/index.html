@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ocean Risk and Vessel Monitoring System</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="modules/navalResponse/navalResponse.css" />
+  <link rel="stylesheet" href="modules/weather/weather.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -83,6 +85,10 @@
         <a class="nav-item" data-page="alerts" onclick="navigate('alerts')">
           <i class="fas fa-triangle-exclamation"></i><span>Alerts</span>
           <span class="badge" id="nav-alert-badge">0</span>
+        </a>
+        <div class="nav-divider"></div>
+        <a class="nav-item" data-page="weather" onclick="navigate('weather')">
+          <i class="fas fa-cloud-sun-rain"></i><span>Weather & Disaster</span>
         </a>
         <div class="nav-divider"></div>
         <a class="nav-item" data-page="analytics" onclick="navigate('analytics')">
@@ -364,6 +370,52 @@
           </div>
         </div>
 
+        <!-- WEATHER & DISASTER PAGE -->
+        <div id="page-weather" class="page">
+          <div class="page-header">
+            <h2><i class="fas fa-cloud-sun-rain"></i> Weather & Disaster Intelligence</h2>
+            <p>Real-time weather monitoring, cyclone tracking, and disaster management for coastal regions</p>
+          </div>
+          
+          <!-- Location Search -->
+          <div id="weather-search-container"></div>
+          
+          <!-- Date Selector for Historical View -->
+          <div id="weather-date-container"></div>
+          
+          <!-- Weather Dashboard -->
+          <div id="weather-dashboard"></div>
+          
+          <!-- Historical Disasters -->
+          <div id="weather-historical"></div>
+          
+          <!-- Weather Map Container -->
+          <div class="card glass" style="margin-top: 20px;">
+            <div class="card-header">
+              <i class="fas fa-map"></i> Weather Map
+              <div style="margin-left: auto; display: flex; gap: 8px;">
+                <label class="toggle-row" style="margin: 0;">
+                  <input type="checkbox" checked onchange="toggleWeatherLayer('cyclones', this.checked)">
+                  <span style="font-size: 11px;">Cyclones</span>
+                </label>
+                <label class="toggle-row" style="margin: 0;">
+                  <input type="checkbox" checked onchange="toggleWeatherLayer('rainfall', this.checked)">
+                  <span style="font-size: 11px;">Rainfall</span>
+                </label>
+                <label class="toggle-row" style="margin: 0;">
+                  <input type="checkbox" checked onchange="toggleWeatherLayer('wind', this.checked)">
+                  <span style="font-size: 11px;">Wind</span>
+                </label>
+                <label class="toggle-row" style="margin: 0;">
+                  <input type="checkbox" onchange="toggleWeatherLayer('historical', this.checked)">
+                  <span style="font-size: 11px;">Historical</span>
+                </label>
+              </div>
+            </div>
+            <div id="weather-map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
+          </div>
+        </div>
+
         <!-- FILE UPLOAD PAGE -->
         <div id="page-upload" class="page">
           <div class="page-header">
@@ -390,6 +442,13 @@
 
   <script src="https://unpkg.com/mammoth@1.4.0/mammoth.browser.min.js"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="modules/navalResponse/interceptionUtils.js"></script>
+  <script src="modules/navalResponse/actionGenerator.js"></script>
+  <script src="modules/navalResponse/navalResponseEngine.js"></script>
+  <script src="modules/navalResponse/navalResponseUI.js"></script>
+  <script src="modules/weather/weatherService.js"></script>
+  <script src="modules/weather/weatherMap.js"></script>
+  <script src="modules/weather/weatherUI.js"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
