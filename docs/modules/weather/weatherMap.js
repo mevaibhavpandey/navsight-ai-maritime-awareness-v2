@@ -354,7 +354,15 @@ class WeatherMap {
   }
 
   clearAll() {
-    Object.values(this.layers).forEach(layer => layer.clearLayers());
+    this.layers.cyclones.clearLayers();
+    this.layers.rainfall.clearLayers();
+    this.layers.wind.clearLayers();
+    this.layers.warnings.clearLayers();
+    this.layers.historical.clearLayers();
+    this.renderCloudLayer();
+    if (!this.satelliteMarkers || this.satelliteMarkers.length === 0) {
+      this.initOrbitingSatellites();
+    }
   }
 
   toggleLayer(layerName, visible) {
