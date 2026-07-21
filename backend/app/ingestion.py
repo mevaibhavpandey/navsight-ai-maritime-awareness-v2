@@ -21,37 +21,69 @@ from app.alerts import alert_engine
 logger = logging.getLogger(__name__)
 
 # ── Demo vessel seeds ─────────────────────────────────────────────────────────
-_DEMO_SEEDS = [
-    # All positions verified in open ocean / shipping lanes
-    {"mmsi": "419000001", "name": "INS Vikrant",      "lat": 15.5,  "lon": 69.2,  "heading": 45,  "speed": 18, "type": "Naval Vessel",   "flag": "India"},
-    {"mmsi": "419000002", "name": "INS Chennai",      "lat": 10.5,  "lon": 83.5,  "heading": 270, "speed": 22, "type": "Naval Vessel",   "flag": "India"},
-    {"mmsi": "419000003", "name": "ICGS Samarth",     "lat": 17.2,  "lon": 70.5,  "heading": 180, "speed": 14, "type": "Coast Guard",    "flag": "India"},
-    {"mmsi": "636092001", "name": "MV Pacific Star",  "lat": 7.8,   "lon": 74.2,  "heading": 90,  "speed": 12, "type": "Cargo Ship",     "flag": "Liberia"},
-    {"mmsi": "477123456", "name": "CSCL Globe",       "lat": 5.5,   "lon": 80.5,  "heading": 315, "speed": 15, "type": "Container Ship", "flag": "China"},
-    {"mmsi": "235000001", "name": "HMS Dragon",       "lat": 14.0,  "lon": 62.0,  "heading": 120, "speed": 20, "type": "Naval Vessel",   "flag": "UK"},
-    {"mmsi": "338000001", "name": "USS Nimitz",       "lat": 18.5,  "lon": 65.0,  "heading": 200, "speed": 25, "type": "Naval Vessel",   "flag": "USA"},
-    {"mmsi": "525000001", "name": "KRI Diponegoro",   "lat": 4.0,   "lon": 97.5,  "heading": 270, "speed": 16, "type": "Naval Vessel",   "flag": "Indonesia"},
-    {"mmsi": "548000001", "name": "BRP Gregorio",     "lat": 8.5,   "lon": 120.5, "heading": 45,  "speed": 14, "type": "Naval Vessel",   "flag": "Philippines"},
-    {"mmsi": "000000001", "name": "Unknown Dhow",     "lat": 12.5,  "lon": 48.5,  "heading": 310, "speed": 8,  "type": "Fishing Vessel", "flag": "Unknown"},
-    {"mmsi": "000000002", "name": "Suspicious Craft", "lat": 14.8,  "lon": 52.0,  "heading": 280, "speed": 35, "type": "Unknown",        "flag": "Unknown"},
-    {"mmsi": "419000010", "name": "MV Mumbai Trader", "lat": 20.5,  "lon": 67.8,  "heading": 160, "speed": 10, "type": "Cargo Ship",     "flag": "India"},
-    {"mmsi": "419000011", "name": "MT Kochi Tanker",  "lat": 6.5,   "lon": 73.8,  "heading": 350, "speed": 11, "type": "Tanker",         "flag": "India"},
-    {"mmsi": "419000012", "name": "MV Andaman Star",  "lat": 9.0,   "lon": 90.5,  "heading": 90,  "speed": 13, "type": "Passenger Ship", "flag": "India"},
-    {"mmsi": "636000099", "name": "MV Atlantic Hope", "lat": 3.5,   "lon": 76.0,  "heading": 45,  "speed": 14, "type": "Cargo Ship",     "flag": "Liberia"},
-]
-_demo_state: dict[str, dict] = {s["mmsi"]: dict(s) for s in _DEMO_SEEDS}
+# ── 1,500+ Marine Vessel Fleet Generator ─────────────────────────────────────
+def _generate_realistic_fleet(count: int = 1500) -> list[dict]:
+    types = ['Cargo Ship', 'Container Ship', 'Tanker', 'Fishing Vessel', 'Naval Vessel', 'Coast Guard', 'High Speed Craft', 'Research Vessel', 'Passenger Ship', 'Special Craft']
+    flags = ['India', 'Panama', 'Liberia', 'China', 'USA', 'UK', 'Japan', 'Singapore', 'Marshall Islands', 'Germany', 'France', 'Australia', 'South Korea']
+    prefixes = ['MV', 'MT', 'INS', 'ICGS', 'COSCO', 'Ever', 'Hai Yang', 'FV Matsya', 'USNS', 'HMAS', 'ROKS', 'MSC', 'CMA CGM', 'Frontline']
+
+    fleet = []
+    for i in range(count):
+        mmsi = str(419000000 + i)
+        v_type = types[i % len(types)]
+        flag = flags[i % len(flags)]
+        prefix = prefixes[i % len(prefixes)]
+        name = f"{prefix} {v_type.split()[0]} {1000 + i}"
+
+        lane = random.random()
+        if lane < 0.35:
+            lat = random.uniform(6.0, 22.0)
+            lon = random.uniform(60.0, 72.5)  # Arabian Sea
+        elif lane < 0.70:
+            lat = random.uniform(5.0, 21.0)
+            lon = random.uniform(82.0, 93.0)  # Bay of Bengal
+        elif lane < 0.85:
+            lat = random.uniform(-10.0, 5.0)
+            lon = random.uniform(55.0, 95.0)  # Indian Ocean Deep Sea
+        else:
+            lat = random.uniform(1.0, 15.0)
+            lon = random.uniform(96.0, 115.0) # Malacca / South China Sea
+
+        # Land clamping
+        if 8.8 < lat < 28.0 and 73.8 < lon < 87.5:
+            lon = 71.8 if lon < 80.0 else 89.2
+
+        fleet.append({
+            "mmsi": mmsi,
+            "name": name,
+            "lat": round(lat, 5),
+            "lon": round(lon, 5),
+            "heading": random.randint(0, 359),
+            "speed": round(random.uniform(6.0, 24.0), 1),
+            "type": v_type,
+            "flag": flag,
+        })
+    return fleet
+
+_demo_fleet = _generate_realistic_fleet(1500)
+_demo_state: dict[str, dict] = {s["mmsi"]: dict(s) for s in _demo_fleet}
 
 
 def _simulate_movement(state: dict) -> dict:
     speed_knots = state["speed"]
     heading_rad = math.radians(state["heading"])
     dist_deg = speed_knots * 0.000278 * config.POLL_INTERVAL
-    state["lat"] += dist_deg * math.cos(heading_rad)
-    state["lon"] += dist_deg * math.sin(heading_rad)
-    state["heading"] = (state["heading"] + random.uniform(-3, 3)) % 360
-    state["speed"] = max(0, state["speed"] + random.uniform(-0.5, 0.5))
-    state["lat"] = max(-10, min(30, state["lat"]))
-    state["lon"] = max(45, min(130, state["lon"]))
+    new_lat = state["lat"] + dist_deg * math.cos(heading_rad)
+    new_lon = state["lon"] + dist_deg * math.sin(heading_rad)
+    
+    # Land clamping
+    if 8.8 < new_lat < 28.0 and 73.8 < new_lon < 87.5:
+        new_lon = 71.8 if new_lon < 80.0 else 89.2
+
+    state["lat"] = max(-15.0, min(30.0, new_lat))
+    state["lon"] = max(40.0, min(120.0, new_lon))
+    state["heading"] = (state["heading"] + random.uniform(-2, 2)) % 360
+    state["speed"] = max(5.0, min(30.0, state["speed"] + random.uniform(-0.3, 0.3)))
     return state
 
 
@@ -151,12 +183,11 @@ async def _aisstream_loop():
     url = "wss://stream.aisstream.io/v0/stream"
     retry_delay = 5
 
-    # Global bounding box — all vessels worldwide
     BOUNDING_BOX = [[-90.0, -180.0], [90.0, 180.0]]
 
     while True:
         try:
-            logger.info("Connecting to aisstream.io (Indian Ocean region)...")
+            logger.info("Connecting to aisstream.io...")
             ws = await websockets.connect(url, ping_interval=20, ping_timeout=60, open_timeout=30)
             try:
                 sub = {
@@ -165,7 +196,7 @@ async def _aisstream_loop():
                     "FilterMessageTypes": ["PositionReport"],
                 }
                 await ws.send(json.dumps(sub))
-                logger.info("Subscribed — Indian Ocean AIS feed active")
+                logger.info("Subscribed — AIS feed active")
                 retry_delay = 5
                 _msg_count = 0
 
@@ -198,9 +229,8 @@ async def _aisstream_loop():
 # ── Demo fallback loop ────────────────────────────────────────────────────────
 
 async def _demo_loop():
-    """Continuously update demo vessels."""
-    logger.info("Running in DEMO mode — simulating %d vessels", len(_DEMO_SEEDS))
-    # Seed store immediately on startup
+    """Continuously update 1,500+ vessels."""
+    logger.info("Running in DEMO mode — simulating %d vessels", len(_demo_fleet))
     for v in _ingest_demo():
         vessel_store.upsert(v)
     while True:
