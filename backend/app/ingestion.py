@@ -183,20 +183,20 @@ async def _aisstream_loop():
     url = "wss://stream.aisstream.io/v0/stream"
     retry_delay = 5
 
-    BOUNDING_BOX = [[-90.0, -180.0], [90.0, 180.0]]
+    BOUNDING_BOXES = [[[-90.0, -180.0], [90.0, 180.0]]]
 
     while True:
         try:
-            logger.info("Connecting to aisstream.io...")
+            logger.info("Connecting to aisstream.io real-time satellite feed...")
             ws = await websockets.connect(url, ping_interval=20, ping_timeout=60, open_timeout=30)
             try:
                 sub = {
-                    "Apikey": config.AIS_API_KEY,
-                    "BoundingBoxes": [BOUNDING_BOX],
+                    "APIKey": config.AIS_API_KEY,
+                    "BoundingBoxes": BOUNDING_BOXES,
                     "FilterMessageTypes": ["PositionReport"],
                 }
                 await ws.send(json.dumps(sub))
-                logger.info("Subscribed — AIS feed active")
+                logger.info("Subscribed to AISStream.io — Real global AIS feed active")
                 retry_delay = 5
                 _msg_count = 0
 
