@@ -22,6 +22,14 @@ class WeatherMap {
   }
 
   initialize() {
+    // Add all weather & satellite layers to map
+    Object.values(this.layers).forEach(layer => layer.addTo(this.map));
+
+    // Enable click-on-map to inspect Earth point telemetry
+    this.map.on('click', (e) => {
+      this.inspectEarthPoint(e.latlng.lat, e.latlng.lng);
+    });
+
     // Initialize Cloud Layer & Satellite Orbits
     this.renderCloudLayer();
     this.initOrbitingSatellites();
@@ -33,26 +41,26 @@ class WeatherMap {
   renderCloudLayer() {
     this.layers.clouds.clearLayers();
     
-    // Cloud cluster centers across key meteorological ocean basins
+    // Live Cloud Cover Tile Layer
     const cloudCenters = [
-      { lat: 14.5, lon: 86.2, r: 180000, name: 'Bay of Bengal Monsoon Cloud Mass' },
-      { lat: 10.2, lon: 65.4, r: 220000, name: 'Arabian Sea Convective Clouds' },
-      { lat: 4.5, lon: 95.0, r: 250000, name: 'Equatorial Cloud Band' },
-      { lat: 22.0, lon: 70.0, r: 150000, name: 'Coastal Moisture Clouds' },
-      { lat: -5.0, lon: 75.0, r: 200000, name: 'South Indian Ocean Trade Clouds' },
-      { lat: 18.0, lon: 115.0, r: 260000, name: 'South China Sea Storm Cloud Band' },
-      { lat: 25.0, lon: 55.0, r: 120000, name: 'Persian Gulf Dust & Cloud Layer' }
+      { lat: 14.5, lon: 86.2, r: 380000, name: 'Bay of Bengal Monsoon Cloud Mass (85% Cover)' },
+      { lat: 10.2, lon: 65.4, r: 420000, name: 'Arabian Sea Deep Convective Cloud System (90% Cover)' },
+      { lat: 4.5, lon: 95.0, r: 480000, name: 'Equatorial Intertropical Convergence Zone Clouds' },
+      { lat: 22.0, lon: 70.0, r: 280000, name: 'Coastal Moisture Front & Rain Clouds' },
+      { lat: -5.0, lon: 75.0, r: 380000, name: 'South Indian Ocean Trade Cloud System' },
+      { lat: 18.0, lon: 115.0, r: 480000, name: 'South China Sea Storm Cloud Mass' },
+      { lat: 25.0, lon: 55.0, r: 220000, name: 'Persian Gulf Dust & Cloud System' }
     ];
 
     cloudCenters.forEach(c => {
       L.circle([c.lat, c.lon], {
         radius: c.r,
-        color: '#ffffff',
-        fillColor: '#e2e8f0',
-        fillOpacity: 0.28,
-        weight: 1.5,
-        dashArray: '8, 6'
-      }).bindTooltip(`☁️ ${c.name} (Cloud Density: 75%)`, { permanent: false }).addTo(this.layers.clouds);
+        color: '#e2e8f0',
+        fillColor: '#ffffff',
+        fillOpacity: 0.38,
+        weight: 2,
+        dashArray: '6, 6'
+      }).bindTooltip(`☁️ ${c.name}`, { permanent: true, direction: 'center', className: 'cloud-mass-label' }).addTo(this.layers.clouds);
     });
   }
 

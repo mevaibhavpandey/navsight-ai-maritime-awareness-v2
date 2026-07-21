@@ -477,69 +477,86 @@ function addPiracyZone(bounds, name) {
     .bindTooltip('Piracy: '+name).addTo(layerPiracy);
 }
 
-// ── Continuous Dynamic Vessel Simulation Engine ──────────────────────────────
+// ── Continuous Dynamic Vessel Simulation Engine (1,000+ Ships Fleet) ──────────
 let _simTimer = null;
 let _simCount = 0;
+
+function _clampToMarineSeaLane(lat, lon) {
+  // If lat/lon falls inside Indian peninsula landmass
+  if (lat > 8.8 && lat < 28.0 && lon > 73.8 && lon < 87.5) {
+    if (lon < 80.0) lon = 71.8 - Math.random() * 1.5; // Shift to Arabian Sea
+    else lon = 89.2 + Math.random() * 1.5; // Shift to Bay of Bengal
+  }
+  // Arabia landmass
+  if (lat > 15.0 && lat < 28.0 && lon > 43.0 && lon < 54.0) {
+    lon = 58.5 + Math.random() * 3.0;
+  }
+  // Sri Lanka landmass
+  if (lat > 6.0 && lat < 9.8 && lon > 79.5 && lon < 81.8) {
+    lon = 83.5 + Math.random() * 1.5;
+  }
+  return { lat: parseFloat(lat.toFixed(4)), lon: parseFloat(lon.toFixed(4)) };
+}
 
 function initVesselSimulator() {
   if (_simTimer) return;
 
-  // Initial fleet of 35+ realistic ships across global maritime lanes
-  const initialFleet = [
-    { mmsi: '419001101', name: 'INS Vikrant (R11)', lat: 14.2, lon: 73.8, speed: 24.5, heading: 320, vessel_type: 'Naval Vessel', flag: 'India', status: 'Underway' },
-    { mmsi: '419002202', name: 'INS Kolkata (D63)', lat: 18.5, lon: 71.2, speed: 22.0, heading: 45, vessel_type: 'Naval Vessel', flag: 'India', status: 'Underway' },
-    { mmsi: '419003303', name: 'ICGS Samarth', lat: 15.3, lon: 73.2, speed: 18.5, heading: 180, vessel_type: 'Coast Guard', flag: 'India', status: 'Underway' },
-    { mmsi: '419004404', name: 'MV Swarna Kamal', lat: 12.8, lon: 81.5, speed: 14.2, heading: 90, vessel_type: 'Tanker', flag: 'India', status: 'Underway' },
-    { mmsi: '419005505', name: 'MT Desh Vishal', lat: 19.8, lon: 68.4, speed: 13.5, heading: 270, vessel_type: 'Tanker', flag: 'India', status: 'Underway' },
-    { mmsi: '351992000', name: 'MSC Oscar', lat: 6.2, lon: 78.5, speed: 19.8, heading: 110, vessel_type: 'Container Ship', flag: 'Panama', status: 'Underway' },
-    { mmsi: '636018000', name: 'Ever Given', lat: 12.5, lon: 47.2, speed: 16.4, heading: 300, vessel_type: 'Container Ship', flag: 'Liberia', status: 'Underway' },
-    { mmsi: '477123400', name: 'COSCO Shipping Universe', lat: 5.8, lon: 98.2, speed: 17.0, heading: 135, vessel_type: 'Container Ship', flag: 'China', status: 'Underway' },
-    { mmsi: '412889000', name: 'Yuan Wang 5', lat: 7.2, lon: 76.5, speed: 15.0, heading: 160, vessel_type: 'Research Vessel', flag: 'China', status: 'Underway' },
-    { mmsi: '338112000', name: 'USNS Bowditch', lat: 16.5, lon: 67.8, speed: 12.0, heading: 200, vessel_type: 'Research Vessel', flag: 'USA', status: 'Underway' },
-    { mmsi: '235001200', name: 'RRS Sir David Attenborough', lat: -5.2, lon: 72.4, speed: 11.5, heading: 190, vessel_type: 'Research Vessel', flag: 'UK', status: 'Underway' },
-    { mmsi: '431009800', name: 'JS Izumo (DDH-183)', lat: 10.4, lon: 88.2, speed: 21.0, heading: 250, vessel_type: 'Naval Vessel', flag: 'Japan', status: 'Underway' },
-    { mmsi: '525004300', name: 'KRI Raden Eddy Martadinata', lat: 4.8, lon: 99.1, speed: 18.0, heading: 315, vessel_type: 'Naval Vessel', flag: 'Indonesia', status: 'Underway' },
-    { mmsi: '419009988', name: 'FV Sagar Kanya', lat: 16.1, lon: 82.4, speed: 8.5, heading: 40, vessel_type: 'Fishing Vessel', flag: 'India', status: 'Fishing' },
-    { mmsi: '419007766', name: 'FV Matsya Nidhi', lat: 9.2, lon: 75.8, speed: 7.2, heading: 120, vessel_type: 'Fishing Vessel', flag: 'India', status: 'Fishing' },
-    { mmsi: '211223300', name: 'Hapag-Lloyd Express', lat: 21.2, lon: 63.5, speed: 16.8, heading: 285, vessel_type: 'Cargo Ship', flag: 'Germany', status: 'Underway' },
-    { mmsi: '228334400', name: 'CMA CGM Antoine de Saint Exupery', lat: 11.5, lon: 52.0, speed: 18.2, heading: 70, vessel_type: 'Container Ship', flag: 'France', status: 'Underway' },
-    { mmsi: '503445500', name: 'HMAS Hobart', lat: -2.5, lon: 85.0, speed: 23.0, heading: 330, vessel_type: 'Naval Vessel', flag: 'Australia', status: 'Underway' },
-    { mmsi: '440556600', name: 'ROKS Sejong the Great', lat: 13.1, lon: 93.4, speed: 22.5, heading: 15, vessel_type: 'Naval Vessel', flag: 'South Korea', status: 'Underway' },
-    { mmsi: '370667700', name: 'Oceanic Challenger', lat: 22.4, lon: 89.1, speed: 11.0, heading: 180, vessel_type: 'Special Craft', flag: 'Panama', status: 'Underway' },
-    { mmsi: '419881122', name: 'INS Arighat (S3)', lat: 17.1, lon: 84.6, speed: 19.0, heading: 125, vessel_type: 'Naval Vessel', flag: 'India', status: 'Underway' },
-    { mmsi: '419882233', name: 'INS Mormugao (D67)', lat: 13.8, lon: 71.9, speed: 25.4, heading: 340, vessel_type: 'Naval Vessel', flag: 'India', status: 'Underway' },
-    { mmsi: '419883344', name: 'ICGS Varaha', lat: 11.9, lon: 79.8, speed: 16.0, heading: 60, vessel_type: 'Coast Guard', flag: 'India', status: 'Underway' },
-    { mmsi: '636991122', name: 'Frontline Voyager', lat: 12.1, lon: 46.8, speed: 14.0, heading: 95, vessel_type: 'Tanker', flag: 'Liberia', status: 'Underway' },
-    { mmsi: '412773344', name: 'Dong Fang Hun 3', lat: 8.8, lon: 91.2, speed: 28.5, heading: 275, vessel_type: 'High Speed Craft', flag: 'China', status: 'Underway' },
-    { mmsi: '255883311', name: 'Nadir Explorer', lat: 14.5, lon: 58.2, speed: 29.2, heading: 50, vessel_type: 'High Speed Craft', flag: 'Portugal', status: 'Underway' },
-    { mmsi: '419001199', name: 'MV Bharat Seva', lat: 17.5, lon: 72.1, speed: 13.8, heading: 175, vessel_type: 'Cargo Ship', flag: 'India', status: 'Underway' },
-    { mmsi: '419002288', name: 'MT Ocean Sentinel', lat: 20.1, lon: 70.8, speed: 12.4, heading: 230, vessel_type: 'Tanker', flag: 'India', status: 'Underway' },
-    { mmsi: '351445566', name: 'Panama Trader', lat: 4.1, lon: 95.5, speed: 15.6, heading: 140, vessel_type: 'Cargo Ship', flag: 'Panama', status: 'Underway' },
-    { mmsi: '419556677', name: 'INS Chennai (D65)', lat: 12.1, lon: 81.9, speed: 26.2, heading: 10, vessel_type: 'Naval Vessel', flag: 'India', status: 'Underway' },
-    { mmsi: '419667788', name: 'ICGS Shaunak', lat: 22.0, lon: 68.8, speed: 19.5, heading: 150, vessel_type: 'Coast Guard', flag: 'India', status: 'Underway' },
-    { mmsi: '548112233', name: 'BRP Jose Rizal', lat: 6.8, lon: 102.4, speed: 20.0, heading: 40, vessel_type: 'Naval Vessel', flag: 'Philippines', status: 'Underway' },
-    { mmsi: '412998877', name: 'Hai Yang 6', lat: 15.8, lon: 86.4, speed: 27.0, heading: 320, vessel_type: 'Research Vessel', flag: 'China', status: 'Underway' },
-    { mmsi: '419223344', name: 'FV Sea Dragon', lat: 16.8, lon: 81.2, speed: 6.8, heading: 90, vessel_type: 'Fishing Vessel', flag: 'India', status: 'Fishing' },
-    { mmsi: '338991100', name: 'USS Carney (DDG-64)', lat: 12.8, lon: 44.5, speed: 24.0, heading: 110, vessel_type: 'Naval Vessel', flag: 'USA', status: 'Underway' }
-  ];
+  const vesselTypes = ['Cargo Ship', 'Container Ship', 'Tanker', 'Fishing Vessel', 'Naval Vessel', 'Coast Guard', 'High Speed Craft', 'Research Vessel', 'Passenger Ship', 'Special Craft'];
+  const vesselFlags = ['India', 'Panama', 'Liberia', 'China', 'USA', 'UK', 'Japan', 'Singapore', 'Marshall Islands', 'Germany', 'France', 'Australia', 'South Korea'];
+  const shipPrefixes = ['MV', 'MT', 'INS', 'ICGS', 'COSCO', 'Ever', 'Hai Yang', 'FV Matsya', 'USNS', 'HMAS', 'ROKS', 'MSC', 'CMA CGM', 'Frontline'];
 
-  // Seed initial fleet
-  initialFleet.forEach(v => {
-    v.timestamp = new Date().toISOString();
-    v.trail = [[v.lat - 0.05, v.lon - 0.05]];
-    vessels[v.mmsi] = v;
-    evaluateAlerts(v);
-  });
+  // Seed 250 initial realistic marine vessels across global sea lanes
+  for (let i = 0; i < 250; i++) {
+    const mmsi = (419000000 + i).toString();
+    const type = vesselTypes[i % vesselTypes.length];
+    const flag = vesselFlags[i % vesselFlags.length];
+    const prefix = shipPrefixes[i % shipPrefixes.length];
+    const name = `${prefix} ${type.split(' ')[0]} ${100 + i}`;
+
+    // Sea lane distribution: 40% Arabian Sea, 40% Bay of Bengal, 20% Indian Ocean
+    let rawLat, rawLon;
+    const lane = Math.random();
+    if (lane < 0.4) {
+      rawLat = 6.0 + Math.random() * 16.0;
+      rawLon = 62.0 + Math.random() * 11.0;
+    } else if (lane < 0.8) {
+      rawLat = 5.0 + Math.random() * 17.0;
+      rawLon = 82.0 + Math.random() * 12.0;
+    } else {
+      rawLat = -5.0 + Math.random() * 10.0;
+      rawLon = 55.0 + Math.random() * 45.0;
+    }
+
+    const pos = _clampToMarineSeaLane(rawLat, rawLon);
+    const speed = parseFloat((6 + Math.random() * 22).toFixed(1));
+    const heading = Math.floor(Math.random() * 360);
+
+    vessels[mmsi] = {
+      mmsi,
+      name,
+      lat: pos.lat,
+      lon: pos.lon,
+      speed,
+      heading,
+      course: heading,
+      vessel_type: type,
+      flag,
+      status: 'Underway',
+      timestamp: new Date().toISOString(),
+      trail: [[pos.lat - 0.04, pos.lon - 0.04]]
+    };
+    evaluateAlerts(vessels[mmsi]);
+  }
 
   scheduleRedraw();
   updateKPIs();
   updateDashVessels();
   updateDashAlerts();
 
-  // Run simulation timer every 2 seconds
+  // Run continuous motion step every 1.5s
   _simTimer = setInterval(() => {
     _simStep();
-  }, 2000);
+  }, 1500);
 }
 
 function _simStep() {
@@ -550,69 +567,69 @@ function _simStep() {
   vList.forEach(v => {
     const knots = v.speed || 12;
     const deg = (v.heading || 0) * (Math.PI / 180);
-    // Convert knots to approx lat/lon degrees per 2s step (~0.0004 deg per knot)
     const dist = (knots * 0.0004);
     const dLat = Math.cos(deg) * dist;
     const dLon = Math.sin(deg) * dist;
 
-    // Slight random heading jitter
     if (Math.random() < 0.2) {
-      v.heading = (v.heading + (Math.random() - 0.5) * 8 + 360) % 360;
+      v.heading = (v.heading + (Math.random() - 0.5) * 6 + 360) % 360;
     }
 
     const prevLat = v.lat;
     const prevLon = v.lon;
-    v.lat = parseFloat((v.lat + dLat).toFixed(4));
-    v.lon = parseFloat((v.lon + dLon).toFixed(4));
+    let nextPos = _clampToMarineSeaLane(v.lat + dLat, v.lon + dLon);
+
+    v.lat = nextPos.lat;
+    v.lon = nextPos.lon;
     v.timestamp = new Date().toISOString();
 
-    // Maintain trail
     if (!v.trail) v.trail = [];
     v.trail.push([prevLat, prevLon]);
     if (v.trail.length > CFG.trailLength) v.trail.shift();
 
-    // Bounds reset if vessel wanders out of oceans
-    if (v.lat > 32) v.lat = 5.0;
+    // Reset bounds if wandering off screen
+    if (v.lat > 30) v.lat = 6.0;
     if (v.lat < -15) v.lat = 20.0;
-    if (v.lon > 120) v.lon = 50.0;
-    if (v.lon < 40) v.lon = 100.0;
+    if (v.lon > 120) v.lon = 55.0;
+    if (v.lon < 40) v.lon = 95.0;
 
     evaluateAlerts(v);
   });
 
-  // 2. Dynamic Ship Count Increase: Spawn a NEW vessel every 5 steps (~10s) up to 130 ships!
-  if (_simCount % 5 === 0 && vList.length < 130) {
-    const newMmsi = `SIM_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const types = ['Cargo Ship', 'Container Ship', 'Tanker', 'Fishing Vessel', 'Naval Vessel', 'Coast Guard', 'High Speed Craft', 'Research Vessel'];
-    const flags = ['India', 'Panama', 'Liberia', 'China', 'USA', 'UK', 'Japan', 'Singapore', 'Marshall Islands', 'Unknown'];
-    const names = ['MV Ocean Giant', 'MT Pacific Star', 'INS Sahyadri', 'ICGS Rani Abbakka', 'COSCO Glory', 'Ever Gentle', 'Hai Yang II', 'FV Matsya Kanya', 'RRS Discovery', 'USNS Pathfinder', 'SM Singapore'];
+  // 2. Dynamic Ship Count Increase: Spawn NEW sea vessels every 2 steps (~3s) up to 1,200 ships!
+  if (_simCount % 2 === 0 && vList.length < 1200) {
+    for (let k = 0; k < 3; k++) {
+      const newMmsi = `SIM_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      const types = ['Cargo Ship', 'Container Ship', 'Tanker', 'Fishing Vessel', 'Naval Vessel', 'Coast Guard', 'High Speed Craft', 'Research Vessel'];
+      const flags = ['India', 'Panama', 'Liberia', 'China', 'USA', 'UK', 'Japan', 'Singapore', 'Marshall Islands'];
+      const names = ['MV Ocean Sentinel', 'MT Gulf Star', 'INS Sahyadri', 'ICGS Rani Abbakka', 'COSCO Glory', 'Ever Gentle', 'Hai Yang Express', 'FV Matsya Nidhi', 'USNS Pathfinder'];
 
-    const chosenType = types[Math.floor(Math.random() * types.length)];
-    const chosenFlag = flags[Math.floor(Math.random() * flags.length)];
-    const chosenName = `${names[Math.floor(Math.random() * names.length)]} ${Math.floor(Math.random() * 90 + 10)}`;
+      const chosenType = types[Math.floor(Math.random() * types.length)];
+      const chosenFlag = flags[Math.floor(Math.random() * flags.length)];
+      const chosenName = `${names[Math.floor(Math.random() * names.length)]} ${Math.floor(Math.random() * 900 + 100)}`;
 
-    const spawnLat = parseFloat((5 + Math.random() * 18).toFixed(4));
-    const spawnLon = parseFloat((60 + Math.random() * 38).toFixed(4));
-    const spawnSpeed = parseFloat((8 + Math.random() * 22).toFixed(1));
-    const spawnHeading = Math.floor(Math.random() * 360);
+      const rawLat = 5 + Math.random() * 20;
+      const rawLon = 55 + Math.random() * 50;
+      const pos = _clampToMarineSeaLane(rawLat, rawLon);
 
-    const newVessel = {
-      mmsi: newMmsi,
-      name: chosenName,
-      lat: spawnLat,
-      lon: spawnLon,
-      speed: spawnSpeed,
-      heading: spawnHeading,
-      course: spawnHeading,
-      vessel_type: chosenType,
-      flag: chosenFlag,
-      status: 'Underway',
-      timestamp: new Date().toISOString(),
-      trail: [[spawnLat - 0.02, spawnLon - 0.02]]
-    };
+      const newVessel = {
+        mmsi: newMmsi,
+        name: chosenName,
+        lat: pos.lat,
+        lon: pos.lon,
+        speed: parseFloat((8 + Math.random() * 22).toFixed(1)),
+        heading: Math.floor(Math.random() * 360),
+        course: 0,
+        vessel_type: chosenType,
+        flag: chosenFlag,
+        status: 'Underway',
+        timestamp: new Date().toISOString(),
+        trail: [[pos.lat - 0.02, pos.lon - 0.02]]
+      };
 
-    vessels[newMmsi] = newVessel;
-    evaluateAlerts(newVessel);
+      vessels[newMmsi] = newVessel;
+      evaluateAlerts(newVessel);
+    }
   }
 
   scheduleRedraw();
