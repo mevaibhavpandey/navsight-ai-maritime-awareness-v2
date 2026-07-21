@@ -73,18 +73,8 @@ for d in possible_dirs:
         break
 
 if FRONTEND_DIR:
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
-    @app.get("/")
-    async def serve_index():
-        return FileResponse(os.path.join(FRONTEND_DIR, 'index.html'))
-
-    @app.get("/{filename}")
-    async def serve_file(filename: str):
-        path = os.path.join(FRONTEND_DIR, filename)
-        if os.path.exists(path) and os.path.isfile(path):
-            return FileResponse(path)
-        return FileResponse(os.path.join(FRONTEND_DIR, 'index.html'))
+    # Mount frontend files at root to serve all nested subdirectories (modules, etc.) cleanly
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 
 @app.on_event("startup")
