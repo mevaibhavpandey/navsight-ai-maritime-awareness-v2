@@ -1452,11 +1452,14 @@ window.toggleWeatherLayer = toggleWeatherLayer;
 window.weatherUI = weatherUI;
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
-if(sessionStorage.getItem('nv_user')){
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
+window.addEventListener('DOMContentLoaded', () => {
+  sessionStorage.setItem('nv_user', sessionStorage.getItem('nv_user') || 'DEMO001');
+  const ls = document.getElementById('login-screen');
+  const appEl = document.getElementById('app');
+  if (ls) ls.classList.add('hidden');
+  if (appEl) appEl.classList.remove('hidden');
   initApp();
-}
+});
 
 window.login=login;window.logout=logout;window.navigate=navigate;
 window.toggleSidebar=toggleSidebar;window.toggleTheme=toggleTheme;window.setTheme=setTheme;
