@@ -27,8 +27,21 @@ class WeatherMap {
 
     // Enable click-on-map to inspect Earth point telemetry
     this.map.on('click', (e) => {
-      this.inspectEarthPoint(e.latlng.lat, e.latlng.lng);
+      if (e && e.latlng) {
+        this.inspectEarthPoint(e.latlng.lat, e.latlng.lng);
+      }
     });
+
+    // Also attach to map container DOM to prevent drag interception
+    const container = this.map.getContainer();
+    if (container) {
+      container.addEventListener('dblclick', (e) => {
+        const rect = container.getBoundingClientRect();
+        const pt = [e.clientX - rect.left, e.clientY - rect.top];
+        const latlng = this.map.containerPointToLatLng(pt);
+        if (latlng) this.inspectEarthPoint(latlng.lat, latlng.lng);
+      });
+    }
 
     // Initialize Cloud Layer & Satellite Orbits
     this.renderCloudLayer();
