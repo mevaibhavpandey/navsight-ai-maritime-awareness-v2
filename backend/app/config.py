@@ -12,5 +12,5 @@ POLL_INTERVAL: int = int(os.getenv("POLL_INTERVAL", "5"))
 MAX_VESSELS: int  = int(os.getenv("MAX_VESSELS", "5000"))
 CORS_ORIGINS: list[str] = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:5500,http://localhost:5500,null"
+    "*"
 ).split(",")
