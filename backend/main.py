@@ -60,9 +60,19 @@ app.add_middleware(
 
 app.include_router(router)
 
-# Serve frontend at root — fixes file:// WebSocket block issue
-FRONTEND_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend')
-if os.path.exists(FRONTEND_DIR):
+# Serve frontend at root — robust fallback resolution for Render & local
+possible_dirs = [
+    os.path.join(os.path.dirname(__file__), '..', 'frontend'),
+    os.path.join(os.path.dirname(__file__), '..'),
+    os.path.dirname(__file__),
+]
+FRONTEND_DIR = None
+for d in possible_dirs:
+    if os.path.exists(os.path.join(d, 'index.html')):
+        FRONTEND_DIR = os.path.abspath(d)
+        break
+
+if FRONTEND_DIR:
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
     @app.get("/")
@@ -72,7 +82,7 @@ if os.path.exists(FRONTEND_DIR):
     @app.get("/{filename}")
     async def serve_file(filename: str):
         path = os.path.join(FRONTEND_DIR, filename)
-        if os.path.exists(path):
+        if os.path.exists(path) and os.path.isfile(path):
             return FileResponse(path)
         return FileResponse(os.path.join(FRONTEND_DIR, 'index.html'))
 
