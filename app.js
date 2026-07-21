@@ -477,173 +477,21 @@ function addPiracyZone(bounds, name) {
     .bindTooltip('Piracy: '+name).addTo(layerPiracy);
 }
 
-// ── Continuous Dynamic Vessel Simulation Engine (1,000+ Ships Fleet) ──────────
-let _simTimer = null;
-let _simCount = 0;
-
+// ── Marine Sea Lane Clamping ────────────────────────────────────────────────
 function _clampToMarineSeaLane(lat, lon) {
-  // If lat/lon falls inside Indian peninsula landmass
   if (lat > 8.8 && lat < 28.0 && lon > 73.8 && lon < 87.5) {
-    if (lon < 80.0) lon = 71.8 - Math.random() * 1.5; // Shift to Arabian Sea
-    else lon = 89.2 + Math.random() * 1.5; // Shift to Bay of Bengal
+    if (lon < 80.0) lon = 71.8;
+    else lon = 89.2;
   }
-  // Arabia landmass
-  if (lat > 15.0 && lat < 28.0 && lon > 43.0 && lon < 54.0) {
-    lon = 58.5 + Math.random() * 3.0;
-  }
-  // Sri Lanka landmass
-  if (lat > 6.0 && lat < 9.8 && lon > 79.5 && lon < 81.8) {
-    lon = 83.5 + Math.random() * 1.5;
-  }
+  if (lat > 15.0 && lat < 28.0 && lon > 43.0 && lon < 54.0) lon = 58.5;
+  if (lat > 6.0 && lat < 9.8 && lon > 79.5 && lon < 81.8) lon = 83.5;
   return { lat: parseFloat(lat.toFixed(4)), lon: parseFloat(lon.toFixed(4)) };
 }
 
-function initVesselSimulator() {
-  if (_simTimer) return;
-
-  const vesselTypes = ['Cargo Ship', 'Container Ship', 'Tanker', 'Fishing Vessel', 'Naval Vessel', 'Coast Guard', 'High Speed Craft', 'Research Vessel', 'Passenger Ship', 'Special Craft'];
-  const vesselFlags = ['India', 'Panama', 'Liberia', 'China', 'USA', 'UK', 'Japan', 'Singapore', 'Marshall Islands', 'Germany', 'France', 'Australia', 'South Korea'];
-  const shipPrefixes = ['MV', 'MT', 'INS', 'ICGS', 'COSCO', 'Ever', 'Hai Yang', 'FV Matsya', 'USNS', 'HMAS', 'ROKS', 'MSC', 'CMA CGM', 'Frontline'];
-
-  // Seed 250 initial realistic marine vessels across global sea lanes
-  for (let i = 0; i < 250; i++) {
-    const mmsi = (419000000 + i).toString();
-    const type = vesselTypes[i % vesselTypes.length];
-    const flag = vesselFlags[i % vesselFlags.length];
-    const prefix = shipPrefixes[i % shipPrefixes.length];
-    const name = `${prefix} ${type.split(' ')[0]} ${100 + i}`;
-
-    // Sea lane distribution: 40% Arabian Sea, 40% Bay of Bengal, 20% Indian Ocean
-    let rawLat, rawLon;
-    const lane = Math.random();
-    if (lane < 0.4) {
-      rawLat = 6.0 + Math.random() * 16.0;
-      rawLon = 62.0 + Math.random() * 11.0;
-    } else if (lane < 0.8) {
-      rawLat = 5.0 + Math.random() * 17.0;
-      rawLon = 82.0 + Math.random() * 12.0;
-    } else {
-      rawLat = -5.0 + Math.random() * 10.0;
-      rawLon = 55.0 + Math.random() * 45.0;
-    }
-
-    const pos = _clampToMarineSeaLane(rawLat, rawLon);
-    const speed = parseFloat((6 + Math.random() * 22).toFixed(1));
-    const heading = Math.floor(Math.random() * 360);
-
-    vessels[mmsi] = {
-      mmsi,
-      name,
-      lat: pos.lat,
-      lon: pos.lon,
-      speed,
-      heading,
-      course: heading,
-      vessel_type: type,
-      flag,
-      status: 'Underway',
-      timestamp: new Date().toISOString(),
-      trail: [[pos.lat - 0.04, pos.lon - 0.04]]
-    };
-    evaluateAlerts(vessels[mmsi]);
-  }
-
-  scheduleRedraw();
-  updateKPIs();
-  updateDashVessels();
-  updateDashAlerts();
-
-  // Run continuous motion step every 1.5s
-  _simTimer = setInterval(() => {
-    _simStep();
-  }, 1500);
-}
-
-function _simStep() {
-  _simCount++;
-  const vList = Object.values(vessels);
-
-  // 1. Move all existing vessels along their heading
-  vList.forEach(v => {
-    const knots = v.speed || 12;
-    const deg = (v.heading || 0) * (Math.PI / 180);
-    const dist = (knots * 0.0004);
-    const dLat = Math.cos(deg) * dist;
-    const dLon = Math.sin(deg) * dist;
-
-    if (Math.random() < 0.2) {
-      v.heading = (v.heading + (Math.random() - 0.5) * 6 + 360) % 360;
-    }
-
-    const prevLat = v.lat;
-    const prevLon = v.lon;
-    let nextPos = _clampToMarineSeaLane(v.lat + dLat, v.lon + dLon);
-
-    v.lat = nextPos.lat;
-    v.lon = nextPos.lon;
-    v.timestamp = new Date().toISOString();
-
-    if (!v.trail) v.trail = [];
-    v.trail.push([prevLat, prevLon]);
-    if (v.trail.length > CFG.trailLength) v.trail.shift();
-
-    // Reset bounds if wandering off screen
-    if (v.lat > 30) v.lat = 6.0;
-    if (v.lat < -15) v.lat = 20.0;
-    if (v.lon > 120) v.lon = 55.0;
-    if (v.lon < 40) v.lon = 95.0;
-
-    evaluateAlerts(v);
-  });
-
-  // 2. Dynamic Ship Count Increase: Spawn NEW sea vessels every 2 steps (~3s) up to 1,200 ships!
-  if (_simCount % 2 === 0 && vList.length < 1200) {
-    for (let k = 0; k < 3; k++) {
-      const newMmsi = `SIM_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-      const types = ['Cargo Ship', 'Container Ship', 'Tanker', 'Fishing Vessel', 'Naval Vessel', 'Coast Guard', 'High Speed Craft', 'Research Vessel'];
-      const flags = ['India', 'Panama', 'Liberia', 'China', 'USA', 'UK', 'Japan', 'Singapore', 'Marshall Islands'];
-      const names = ['MV Ocean Sentinel', 'MT Gulf Star', 'INS Sahyadri', 'ICGS Rani Abbakka', 'COSCO Glory', 'Ever Gentle', 'Hai Yang Express', 'FV Matsya Nidhi', 'USNS Pathfinder'];
-
-      const chosenType = types[Math.floor(Math.random() * types.length)];
-      const chosenFlag = flags[Math.floor(Math.random() * flags.length)];
-      const chosenName = `${names[Math.floor(Math.random() * names.length)]} ${Math.floor(Math.random() * 900 + 100)}`;
-
-      const rawLat = 5 + Math.random() * 20;
-      const rawLon = 55 + Math.random() * 50;
-      const pos = _clampToMarineSeaLane(rawLat, rawLon);
-
-      const newVessel = {
-        mmsi: newMmsi,
-        name: chosenName,
-        lat: pos.lat,
-        lon: pos.lon,
-        speed: parseFloat((8 + Math.random() * 22).toFixed(1)),
-        heading: Math.floor(Math.random() * 360),
-        course: 0,
-        vessel_type: chosenType,
-        flag: chosenFlag,
-        status: 'Underway',
-        timestamp: new Date().toISOString(),
-        trail: [[pos.lat - 0.02, pos.lon - 0.02]]
-      };
-
-      vessels[newMmsi] = newVessel;
-      evaluateAlerts(newVessel);
-    }
-  }
-
-  scheduleRedraw();
-  updateMiniDots();
-  throttledUIUpdate();
-}
-
-// ── Backend connection — REST polling primary, WebSocket upgrade ──────────────
+// ── Backend connection — Real Live AIS Telemetry ─────────────────────────────
 function connectAIS() {
   setConnStatus('live');
-  setText('st-provider', 'AISStream & Live Simulator');
-  
-  // Initialize continuous simulator engine for guaranteed live vessel movement & ship count increase
-  initVesselSimulator();
+  setText('st-provider', 'AISStream Real-Time Satellite Feed');
   
   startPoll();
   tryWebSocket();

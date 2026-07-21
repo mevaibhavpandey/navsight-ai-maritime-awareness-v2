@@ -1,17 +1,14 @@
 """
 Real-time AIS ingestion pipeline.
-Primary:  aisstream.io WebSocket (free, real global AIS data)
-Fallback: Demo mode with 15 simulated vessels (Indian Ocean)
+Primary: aisstream.io WebSocket (real global AIS data from real physical ships)
 """
 import asyncio
 import json
 import logging
-import math
-import random
 from datetime import datetime, timezone
 from typing import Optional
 
-import httpx
+import websockets
 
 from app import config
 from app.models import Vessel
@@ -20,97 +17,6 @@ from app.alerts import alert_engine
 
 logger = logging.getLogger(__name__)
 
-# ── Demo vessel seeds ─────────────────────────────────────────────────────────
-# ── 1,500+ Marine Vessel Fleet Generator ─────────────────────────────────────
-def _generate_realistic_fleet(count: int = 1500) -> list[dict]:
-    types = ['Cargo Ship', 'Container Ship', 'Tanker', 'Fishing Vessel', 'Naval Vessel', 'Coast Guard', 'High Speed Craft', 'Research Vessel', 'Passenger Ship', 'Special Craft']
-    flags = ['India', 'Panama', 'Liberia', 'China', 'USA', 'UK', 'Japan', 'Singapore', 'Marshall Islands', 'Germany', 'France', 'Australia', 'South Korea']
-    prefixes = ['MV', 'MT', 'INS', 'ICGS', 'COSCO', 'Ever', 'Hai Yang', 'FV Matsya', 'USNS', 'HMAS', 'ROKS', 'MSC', 'CMA CGM', 'Frontline']
-
-    fleet = []
-    for i in range(count):
-        mmsi = str(419000000 + i)
-        v_type = types[i % len(types)]
-        flag = flags[i % len(flags)]
-        prefix = prefixes[i % len(prefixes)]
-        name = f"{prefix} {v_type.split()[0]} {1000 + i}"
-
-        lane = random.random()
-        if lane < 0.35:
-            lat = random.uniform(6.0, 22.0)
-            lon = random.uniform(60.0, 72.5)  # Arabian Sea
-        elif lane < 0.70:
-            lat = random.uniform(5.0, 21.0)
-            lon = random.uniform(82.0, 93.0)  # Bay of Bengal
-        elif lane < 0.85:
-            lat = random.uniform(-10.0, 5.0)
-            lon = random.uniform(55.0, 95.0)  # Indian Ocean Deep Sea
-        else:
-            lat = random.uniform(1.0, 15.0)
-            lon = random.uniform(96.0, 115.0) # Malacca / South China Sea
-
-        # Land clamping
-        if 8.8 < lat < 28.0 and 73.8 < lon < 87.5:
-            lon = 71.8 if lon < 80.0 else 89.2
-
-        fleet.append({
-            "mmsi": mmsi,
-            "name": name,
-            "lat": round(lat, 5),
-            "lon": round(lon, 5),
-            "heading": random.randint(0, 359),
-            "speed": round(random.uniform(6.0, 24.0), 1),
-            "type": v_type,
-            "flag": flag,
-        })
-    return fleet
-
-_demo_fleet = _generate_realistic_fleet(1500)
-_demo_state: dict[str, dict] = {s["mmsi"]: dict(s) for s in _demo_fleet}
-
-
-def _simulate_movement(state: dict) -> dict:
-    speed_knots = state["speed"]
-    heading_rad = math.radians(state["heading"])
-    dist_deg = speed_knots * 0.000278 * config.POLL_INTERVAL
-    new_lat = state["lat"] + dist_deg * math.cos(heading_rad)
-    new_lon = state["lon"] + dist_deg * math.sin(heading_rad)
-    
-    # Land clamping
-    if 8.8 < new_lat < 28.0 and 73.8 < new_lon < 87.5:
-        new_lon = 71.8 if new_lon < 80.0 else 89.2
-
-    state["lat"] = max(-15.0, min(30.0, new_lat))
-    state["lon"] = max(40.0, min(120.0, new_lon))
-    state["heading"] = (state["heading"] + random.uniform(-2, 2)) % 360
-    state["speed"] = max(5.0, min(30.0, state["speed"] + random.uniform(-0.3, 0.3)))
-    return state
-
-
-def _build_vessel_from_demo(state: dict) -> Vessel:
-    return Vessel(
-        mmsi=state["mmsi"],
-        name=state["name"],
-        lat=round(state["lat"], 5),
-        lon=round(state["lon"], 5),
-        speed=round(state["speed"], 1),
-        heading=round(state["heading"], 1),
-        course=round(state["heading"], 1),
-        vessel_type=state.get("type", "Unknown"),
-        flag=state.get("flag", "Unknown"),
-        timestamp=datetime.now(timezone.utc),
-    )
-
-
-def _ingest_demo() -> list[Vessel]:
-    vessels = []
-    for mmsi, state in _demo_state.items():
-        _simulate_movement(state)
-        vessels.append(_build_vessel_from_demo(state))
-    return vessels
-
-
-# ── AISStream.io WebSocket ingestion ─────────────────────────────────────────
 
 def _parse_aisstream(msg: dict) -> Optional[Vessel]:
     """Parse aisstream.io PositionReport message into Vessel."""
@@ -136,7 +42,7 @@ def _parse_aisstream(msg: dict) -> Optional[Vessel]:
             name=str(meta.get("ShipName", "Unknown")).strip() or "Unknown",
             lat=lat,
             lon=lon,
-            speed=float(pos.get("Sog", 0)),       # Speed Over Ground
+            speed=float(pos.get("Sog", 0)),
             heading=float(pos.get("TrueHeading", pos.get("Cog", 0))),
             course=float(pos.get("Cog", 0)),
             vessel_type=_ship_type_label(int(pos.get("ShipType", 0) or 0)),
@@ -162,7 +68,7 @@ def _ship_type_label(code: int) -> str:
 
 
 def _mmsi_to_flag(mmsi: str) -> str:
-    """Rough flag inference from MMSI MID prefix."""
+    """Flag inference from MMSI MID prefix."""
     mid_map = {
         "419": "India", "338": "USA", "235": "UK", "477": "China",
         "525": "Indonesia", "548": "Philippines", "431": "Japan",
@@ -178,20 +84,24 @@ def _mmsi_to_flag(mmsi: str) -> str:
 
 
 async def _aisstream_loop():
-    """Connect to aisstream.io — Indian Ocean + nearby seas only."""
-    import websockets
+    """Connect to aisstream.io — global real ship position stream."""
     url = "wss://stream.aisstream.io/v0/stream"
     retry_delay = 5
-
     BOUNDING_BOXES = [[[-90.0, -180.0], [90.0, 180.0]]]
 
     while True:
+        api_key = config.AIS_API_KEY or "your_api_key_here"
+        if not api_key or api_key == "your_api_key_here":
+            logger.info("Waiting for AISSTREAM_API_KEY in environment to stream live real vessels...")
+            await asyncio.sleep(10)
+            continue
+
         try:
             logger.info("Connecting to aisstream.io real-time satellite feed...")
             ws = await websockets.connect(url, ping_interval=20, ping_timeout=60, open_timeout=30)
             try:
                 sub = {
-                    "APIKey": config.AIS_API_KEY,
+                    "APIKey": api_key,
                     "BoundingBoxes": BOUNDING_BOXES,
                     "FilterMessageTypes": ["PositionReport"],
                 }
@@ -209,8 +119,8 @@ async def _aisstream_loop():
                             if vessel_store.upsert(vessel):
                                 alert_engine.evaluate(vessel)
                             _msg_count += 1
-                            if _msg_count % 500 == 0:
-                                logger.info("AIS feed: %d vessels in store", vessel_store.count())
+                            if _msg_count % 100 == 0:
+                                logger.info("AIS real feed: %d physical vessels in store", vessel_store.count())
                     except asyncio.TimeoutError:
                         await ws.ping()
                     except Exception as exc:
@@ -226,41 +136,6 @@ async def _aisstream_loop():
         retry_delay = min(retry_delay * 2, 60)
 
 
-# ── Demo fallback loop ────────────────────────────────────────────────────────
-
-async def _demo_loop():
-    """Continuously update 1,500+ vessels."""
-    logger.info("Running in DEMO mode — simulating %d vessels", len(_demo_fleet))
-    for v in _ingest_demo():
-        vessel_store.upsert(v)
-    while True:
-        await asyncio.sleep(config.POLL_INTERVAL)
-        for v in _ingest_demo():
-            if vessel_store.upsert(v):
-                alert_engine.evaluate(v)
-        logger.debug("Demo tick: %d vessels in store", vessel_store.count())
-
-
-# ── Main entry point ──────────────────────────────────────────────────────────
-
 async def ingestion_loop():
-    """
-    Start the appropriate ingestion pipeline:
-    - Real AIS via aisstream.io if API key is set
-    - Demo simulation otherwise
-    """
-    is_demo = (
-        not config.AIS_API_KEY
-        or config.AIS_API_KEY.strip() == "your_api_key_here"
-        or config.AIS_PROVIDER == "demo"
-    )
-
-    if is_demo:
-        await _demo_loop()
-    else:
-        # Run real AIS stream; if it fails permanently, fall back to demo
-        try:
-            await _aisstream_loop()
-        except Exception as exc:
-            logger.error("AISStream fatal error: %s — falling back to demo", exc)
-            await _demo_loop()
+    """Start real-time AIS ingestion pipeline."""
+    await _aisstream_loop()
