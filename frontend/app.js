@@ -1462,10 +1462,41 @@ async function loadHistoricalWeather(date) {
   }
 }
 
+let _is3DMode = false;
+let _maritime3DGlobe = null;
+
+function toggle3DGlobeMode() {
+  const map2D = document.getElementById('weather-map');
+  const globe3D = document.getElementById('globe-3d-container');
+  const btn = document.getElementById('btn-toggle-3d');
+  if (!map2D || !globe3D) return;
+
+  _is3DMode = !_is3DMode;
+
+  if (_is3DMode) {
+    map2D.style.display = 'none';
+    globe3D.style.display = 'block';
+    if (btn) btn.innerHTML = '<i class="fas fa-map"></i> Switch to 2D Map';
+
+    if (!_maritime3DGlobe && typeof Maritime3DGlobe !== 'undefined') {
+      _maritime3DGlobe = new Maritime3DGlobe('globe-3d-container');
+      _maritime3DGlobe.initialize();
+    } else if (_maritime3DGlobe) {
+      _maritime3DGlobe.load3DVessels();
+    }
+  } else {
+    map2D.style.display = 'block';
+    globe3D.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-globe"></i> Switch to 3D Globe';
+    if (weatherMap) weatherMap.invalidateSize();
+  }
+}
+
 // Make functions globally accessible
 window.updateWeatherData = updateWeatherData;
 window.loadHistoricalWeather = loadHistoricalWeather;
 window.toggleWeatherLayer = toggleWeatherLayer;
+window.toggle3DGlobeMode = toggle3DGlobeMode;
 window.weatherUI = weatherUI;
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────

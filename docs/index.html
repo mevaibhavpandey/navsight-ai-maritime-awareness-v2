@@ -14,6 +14,9 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/globe.gl@2.28.0/dist/globe.gl.min.js"></script>
+  <script src="modules/3dGlobe/globe3D.js"></script>
 </head>
 <body>
   <!-- Login Screen -->
@@ -383,14 +386,17 @@
           <!-- Clicked Point Telemetry HUD Output Card -->
           <div id="weather-point-telemetry" style="display:none"></div>
           
-          <!-- Weather Map Container -->
+          <!-- Weather & 3D Globe Map Container -->
           <div class="card glass" style="margin-top: 14px;">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
               <div>
-                <i class="fas fa-satellite"></i> Earth Satellite, Clouds & Weather Map
-                <span style="font-size:11px;color:var(--accent);margin-left:8px;font-weight:bold">👉 (CLICK ANYWHERE ON MAP TO INSPECT WEATHER, CLOUDS & TELEMETRY FOR THAT LOCATION)</span>
+                <i class="fas fa-earth-asia"></i> Earth Satellite, Clouds & Weather Intelligence
+                <span style="font-size:11px;color:var(--accent);margin-left:8px;font-weight:bold">👉 (CLICK ANYWHERE ON MAP/GLOBE TO INSPECT WEATHER, CLOUDS & TELEMETRY FOR THAT LOCATION)</span>
               </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn btn-primary" id="btn-toggle-3d" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#00b4d8,#7209b7)" onclick="toggle3DGlobeMode()">
+                  <i class="fas fa-globe"></i> Switch to 3D Globe
+                </button>
                 <label class="toggle-row" style="margin: 0;">
                   <input type="checkbox" checked onchange="toggleWeatherLayer('clouds', this.checked)">
                   <span style="font-size: 11px;">Real-Time Clouds</span>
@@ -417,7 +423,10 @@
                 </label>
               </div>
             </div>
+            <!-- 2D Leaflet Weather Map -->
             <div id="weather-map" style="height: 540px; border-radius: 8px; overflow: hidden; position: relative;"></div>
+            <!-- 3D Three.js Globe Container -->
+            <div id="globe-3d-container" style="height: 540px; border-radius: 8px; overflow: hidden; position: relative; display: none; background: #03071e;"></div>
           </div>
           
           <!-- Date Selector for Historical View -->
