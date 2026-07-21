@@ -4,8 +4,11 @@ from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-AIS_API_KEY: str  = os.getenv("AIS_API_KEY", "").strip()
-AIS_PROVIDER: str = os.getenv("AIS_PROVIDER", "demo").strip()   # demo | aisstream
+AIS_API_KEY: str  = os.getenv("AIS_API_KEY", "400f9eb1f01030d1ff140e69b50e32f5fb3d0faa").strip()
+if not AIS_API_KEY or AIS_API_KEY == "your_api_key_here":
+    AIS_API_KEY = "400f9eb1f01030d1ff140e69b50e32f5fb3d0faa"
+
+AIS_PROVIDER: str = os.getenv("AIS_PROVIDER", "aisstream").strip()   # demo | aisstream
 HOST: str         = os.getenv("HOST", "0.0.0.0")
 PORT: int         = int(os.getenv("PORT", "8000"))
 POLL_INTERVAL: int = int(os.getenv("POLL_INTERVAL", "5"))

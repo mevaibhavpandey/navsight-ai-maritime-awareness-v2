@@ -400,6 +400,7 @@ function initMaps() {
     maxBoundsViscosity: 1.0,
     maxBounds: [[-85,-180],[85,180]],
     minZoom: 2,
+    tap: false,
   }).setView([15,78], 3);
   tileMain = L.tileLayer(t.url,{ maxZoom:18, attribution:t.attr, noWrap:true }).addTo(mainMap);
 
@@ -1198,6 +1199,7 @@ function initWeatherModule() {
       zoomControl: true,
       worldCopyJump: false,
       minZoom: 2,
+      tap: false,
     }).setView([15, 78], 4);
     
     L.tileLayer(t.url, { maxZoom: 18, attribution: t.attr, noWrap: true }).addTo(weatherMap);
