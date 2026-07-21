@@ -373,30 +373,28 @@
         <!-- WEATHER & DISASTER PAGE -->
         <div id="page-weather" class="page">
           <div class="page-header">
-            <h2><i class="fas fa-cloud-sun-rain"></i> Weather & Disaster Intelligence</h2>
-            <p>Real-time weather monitoring, cyclone tracking, and disaster management for coastal regions</p>
+            <h2><i class="fas fa-cloud-sun-rain"></i> Weather, Satellite & Calamity Prevention Command</h2>
+            <p>Real-time Open-Meteo weather monitoring, Earth point telemetry inspector, cloud visualizer, and calamity prevention guidelines</p>
           </div>
           
           <!-- Location Search -->
           <div id="weather-search-container"></div>
-          
-          <!-- Date Selector for Historical View -->
-          <div id="weather-date-container"></div>
-          
-          <!-- Weather Dashboard -->
-          <div id="weather-dashboard"></div>
-          
-          <!-- Historical Disasters -->
-          <div id="weather-historical"></div>
+
+          <!-- Clicked Point Telemetry HUD Output Card -->
+          <div id="weather-point-telemetry" style="display:none"></div>
           
           <!-- Weather Map Container -->
-          <div class="card glass" style="margin-top: 20px;">
+          <div class="card glass" style="margin-top: 14px;">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
               <div>
                 <i class="fas fa-satellite"></i> Earth Satellite, Clouds & Weather Map
-                <span style="font-size:11px;color:var(--text-muted);margin-left:8px">(Click anywhere on map to inspect Earth point telemetry)</span>
+                <span style="font-size:11px;color:var(--accent);margin-left:8px;font-weight:bold">👉 (CLICK ANYWHERE ON MAP TO INSPECT WEATHER, CLOUDS & TELEMETRY FOR THAT LOCATION)</span>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <label class="toggle-row" style="margin: 0;">
+                  <input type="checkbox" checked onchange="toggleWeatherLayer('clouds', this.checked)">
+                  <span style="font-size: 11px;">Real-Time Clouds</span>
+                </label>
                 <label class="toggle-row" style="margin: 0;">
                   <input type="checkbox" checked onchange="toggleWeatherLayer('satellites', this.checked)">
                   <span style="font-size: 11px;">Orbiting Satellites</span>
@@ -421,6 +419,18 @@
             </div>
             <div id="weather-map" style="height: 540px; border-radius: 8px; overflow: hidden; position: relative;"></div>
           </div>
+          
+          <!-- Date Selector for Historical View -->
+          <div id="weather-date-container" style="margin-top:14px"></div>
+          
+          <!-- Weather Dashboard -->
+          <div id="weather-dashboard"></div>
+          
+          <!-- Calamity Prevention & Safety Command Center -->
+          <div id="calamity-prevention-container"></div>
+
+          <!-- Historical Disasters -->
+          <div id="weather-historical"></div>
         </div>
 
         <!-- FILE UPLOAD PAGE -->

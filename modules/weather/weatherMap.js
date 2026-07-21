@@ -22,16 +22,38 @@ class WeatherMap {
   }
 
   initialize() {
-    // Add all weather & satellite layers to map
-    Object.values(this.layers).forEach(layer => layer.addTo(this.map));
-
-    // Enable click-on-map to inspect Earth point telemetry
-    this.map.on('click', (e) => {
-      this.inspectEarthPoint(e.latlng.lat, e.latlng.lng);
-    });
-
-    // Start satellite orbit animation
+    // Initialize Cloud Layer & Satellite Orbits
+    this.renderCloudLayer();
     this.initOrbitingSatellites();
+  }
+
+  /**
+   * Render Animated Real-Time Cloud Cover Bands
+   */
+  renderCloudLayer() {
+    this.layers.clouds.clearLayers();
+    
+    // Cloud cluster centers across key meteorological ocean basins
+    const cloudCenters = [
+      { lat: 14.5, lon: 86.2, r: 180000, name: 'Bay of Bengal Monsoon Cloud Mass' },
+      { lat: 10.2, lon: 65.4, r: 220000, name: 'Arabian Sea Convective Clouds' },
+      { lat: 4.5, lon: 95.0, r: 250000, name: 'Equatorial Cloud Band' },
+      { lat: 22.0, lon: 70.0, r: 150000, name: 'Coastal Moisture Clouds' },
+      { lat: -5.0, lon: 75.0, r: 200000, name: 'South Indian Ocean Trade Clouds' },
+      { lat: 18.0, lon: 115.0, r: 260000, name: 'South China Sea Storm Cloud Band' },
+      { lat: 25.0, lon: 55.0, r: 120000, name: 'Persian Gulf Dust & Cloud Layer' }
+    ];
+
+    cloudCenters.forEach(c => {
+      L.circle([c.lat, c.lon], {
+        radius: c.r,
+        color: '#ffffff',
+        fillColor: '#e2e8f0',
+        fillOpacity: 0.28,
+        weight: 1.5,
+        dashArray: '8, 6'
+      }).bindTooltip(`☁️ ${c.name} (Cloud Density: 75%)`, { permanent: false }).addTo(this.layers.clouds);
+    });
   }
 
   /**
@@ -40,6 +62,16 @@ class WeatherMap {
   async inspectEarthPoint(lat, lon) {
     // Fly smoothly to location if clicked
     this.map.panTo([lat, lon], { animate: true, duration: 0.5 });
+
+    // Target Crosshair Marker on clicked point
+    if (this.targetMarker) this.map.removeLayer(this.targetMarker);
+    const crosshairIcon = L.divIcon({
+      className: 'target-crosshair-marker',
+      html: `<div style="width:32px;height:32px;border:2px solid #00e5ff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 15px #00e5ff;animation:targetPulse 1s infinite alternate"><i class="fas fa-crosshairs" style="color:#00e5ff;font-size:16px"></i></div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+    this.targetMarker = L.marker([lat, lon], { icon: crosshairIcon }).addTo(this.map);
 
     // Show loading popup at click location
     const popup = L.popup({ className: 'earth-telemetry-popup' })
@@ -84,9 +116,9 @@ class WeatherMap {
       `;
       popup.setContent(content);
 
-      // Also trigger weather dashboard update for selected location
-      if (window.weatherUI) {
-        window.weatherUI.currentLocation = { lat, lon, name: `Location (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)` };
+      // Render Telemetry HUD Output Card on Weather Page
+      if (window.weatherUI && window.weatherUI.renderPointTelemetryHUD) {
+        window.weatherUI.renderPointTelemetryHUD(data);
       }
     } catch (err) {
       popup.setContent(`<div style="color:var(--red);padding:8px">Failed to load telemetry data.</div>`);

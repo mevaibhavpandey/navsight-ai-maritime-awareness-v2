@@ -557,6 +557,247 @@ class WeatherUI {
     };
     return icons[type] || 'triangle-exclamation';
   }
+
+  /**
+   * Render Point Telemetry HUD Card on Weather Page
+   */
+  renderPointTelemetryHUD(data) {
+    let container = document.getElementById('weather-point-telemetry');
+    if (!container) return;
+
+    container.style.display = 'block';
+    container.innerHTML = `
+      <div class="card glass" style="margin-bottom: 20px; border: 1px solid var(--accent);">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <i class="fas fa-crosshairs" style="color:#00e5ff"></i>
+            <strong style="color:#00e5ff">INSPECTED POINT TELEMETRY:</strong> ${data.lat}° N, ${data.lon}° E
+          </div>
+          <span class="badge-status green"><i class="fas fa-satellite"></i> SATELLITE LIVE</span>
+        </div>
+        <div style="padding:16px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted)">WEATHER CONDITION</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text)"><i class="fas fa-cloud-sun" style="color:var(--accent)"></i> ${data.condition}</div>
+            <div style="font-size:12px;color:var(--text-muted)">Temp: ${data.temp}°C | Humidity: ${data.humidity}%</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted)">WIND & PRESSURE</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)"><i class="fas fa-wind" style="color:var(--yellow)"></i> ${data.windSpeed} km/h</div>
+            <div style="font-size:12px;color:var(--text-muted)">Heading: ${data.windDeg}° | Pressure: ${data.pressure} hPa</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted)">CLOUD COVER & SEA STATE</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)"><i class="fas fa-cloud" style="color:#e2e8f0"></i> ${data.cloudCover}% Coverage</div>
+            <div style="font-size:12px;color:var(--text-muted)">Sea Temp: ${data.seaSurfaceTemp} | Waves: ${data.waveHeight}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted)">OVERHEAD SATELLITE & RISK</div>
+            <div style="font-size:15px;font-weight:700;color:var(--yellow)"><i class="fas fa-satellite"></i> ${data.overheadSatellite}</div>
+            <div style="font-size:12px;color:var(--text-muted)">Pass: ${data.nextSatPass} | Risk: <strong style="color:${data.riskLevel === 'critical' ? 'var(--red)' : data.riskLevel === 'high' ? 'var(--yellow)' : 'var(--green)'}">${data.riskLevel.toUpperCase()}</strong></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Render Comprehensive Calamity Prevention & Disaster Mitigation Section
+   */
+  renderCalamityPreventionSection() {
+    const container = document.getElementById('calamity-prevention-container');
+    if (!container) return;
+
+    const preventionData = {
+      cyclone: {
+        title: '🌀 Cyclone & Tropical Storm Prevention & Mitigation',
+        color: '#ef476f',
+        infrastructure: [
+          'Construct cyclone shelters with reinforced concrete roofs on elevated stilts above storm surge levels.',
+          'Establish bio-shields along coastal belts using dense mangrove plantations and casuarina shelterbelts.',
+          'Install underground power cables and fiber-optic telemetry lines to prevent grid collapse.',
+          'Implement automated early-warning siren networks connected to Doppler Weather Radars.'
+        ],
+        before: [
+          'Board up windows with plywood shutters and secure loose outdoor equipment or roofing sheets.',
+          'Store 72 hours of drinkable water (4L per person/day) and non-perishable canned food.',
+          'Ensure VHF marine radios and satellite phones are 100% charged with spare battery packs.'
+        ],
+        during: [
+          'Stay indoors away from glass windows and doors in an inner windowless room.',
+          'Turn off main electrical breakers and LPG gas valves immediately if floodwater rises.',
+          'Do NOT go outside during the calm "eye of the cyclone" — winds will reverse violently without warning.'
+        ],
+        after: [
+          'Beware of fallen power lines, submerged electrical cables, and weakened tree branches.',
+          'Boil or chlorinate all drinking water before consumption to prevent cholera and dysentery.',
+          'Inspect building structures for cracks or foundation settlement before entering.'
+        ]
+      },
+      tsunami: {
+        title: '🌊 Tsunami & Coastal Surge Prevention & Safety Protocol',
+        color: '#00b4d8',
+        infrastructure: [
+          'Build seawalls, offshore breakwaters, and tsunami surge dissipation gates across river estuaries.',
+          'Demarcate Tsunami Evacuation Routes with bright retro-reflective signs pointing to land >30 meters high.',
+          'Deploy deep-ocean DART (Deep-ocean Assessment and Reporting of Tsunamis) buoy sensors.',
+          'Enforce coastal zone regulation buffer zones prohibiting ground residential structures within 500m of high tide.'
+        ],
+        before: [
+          'Recognize Natural Warning Signs: Strong earthquake ground shaking near coast OR sudden oceanic receding water.',
+          'Map out the nearest high-ground route (at least 30m altitude or 2km inland) from your location.'
+        ],
+        during: [
+          'EVACUATE IMMEDIATELY on foot to high ground as soon as natural warning signs or sirens occur — DO NOT wait for official alert.',
+          'If at sea in a vessel: Move out into DEEP WATER (>100 meters depth) immediately — tsunami waves have smaller amplitude in deep ocean.'
+        ],
+        after: [
+          'Stay on high ground for at least 4 hours — tsunamis consist of multiple wave crests, and the 2nd or 3rd wave is often the largest.',
+          'Do NOT enter low-lying coastal areas until emergency services declare official clearance.'
+        ]
+      },
+      earthquake: {
+        title: '🏚️ Earthquake & Seismic Damage Prevention Protocol',
+        color: '#ffd60a',
+        infrastructure: [
+          'Adopt Seismic Building Codes (IS 1893) with base isolation dampers and shear walls.',
+          'Anchor heavy machinery, gas cylinders, fuel tanks, and high storage racks to structural walls.',
+          'Install seismic automatic gas shutoff valves that cut fuel lines upon sensing 4.0+ M vibrations.'
+        ],
+        before: [
+          'Identify safe spots in every room: under sturdy tables, desks, or against interior load-bearing walls.',
+          'Keep an emergency Go-Bag near your exit door containing emergency light, whistle, and medical kit.'
+        ],
+        during: [
+          'DROP, COVER, AND HOLD ON under a heavy desk or table. Protect head and neck with arms.',
+          'If outdoors: Move away from high-rise buildings, glass facades, utility poles, and overpasses.',
+          'If driving: Pull over to a clear side location away from bridges or overhanging signs and stay in vehicle.'
+        ],
+        after: [
+          'Be prepared for aftershocks. Inspect gas, water, and electrical lines for leaks or sparks.',
+          'Use battery-powered flashlights instead of open flames (matches/lighters) to avoid igniting leaked gas.'
+        ]
+      },
+      flood: {
+        title: '🌧️ Flash Flood & Coastal Inundation Prevention',
+        color: '#4895ef',
+        infrastructure: [
+          'Maintain urban stormwater drainage networks, retention basins, and automated pumping stations.',
+          'Construct elevated embankments and flood walls around critical substations and hospitals.',
+          'Deploy telemetry water level sensors along river basins for real-time flood hydrograph modeling.'
+        ],
+        before: [
+          'Elevate electrical panels, appliances, and valuables at least 1 meter above historic flood levels.',
+          'Clear local gutters and storm drains of debris before monsoon rainy seasons.'
+        ],
+        during: [
+          'Never walk, swim, or drive through moving floodwaters — 15cm of moving water can knock a person over.',
+          'If trapped in a building, move to the highest level or roof. Take a flashlight and signal for rescue.'
+        ],
+        after: [
+          'Disinfect all items that came into contact with floodwaters (sewage contamination risk).',
+          'Avoid drinking tap water until tested and declared potable by health authorities.'
+        ]
+      },
+      marine: {
+        title: '⚓ Marine Vessel Emergency Distress & Capsizing Prevention',
+        color: '#06d6a0',
+        infrastructure: [
+          'Equip all sea vessels with mandatory EPIRB (Emergency Position Indicating Radio Beacon) & SART.',
+          'Implement AIS Class A/B vessel tracking and mandatory VMS (Vessel Monitoring System) transponders.',
+          'Enforce strict vessel stability checks, cargo lashing, and hatch watertight sealing prior to departure.'
+        ],
+        before: [
+          'Check NAVTEX weather warnings and barometric pressure drops before sailing into open sea.',
+          'Inspect inflatable life rafts, immersion suits, life jackets (with strobe lights & whistles) for all crew.'
+        ],
+        during: [
+          'Broadcast MAYDAY distress call on VHF Channel 16 (156.8 MHz) or HF 2182 kHz: "MAYDAY MAYDAY MAYDAY, Vessel [Name], Position [Lat/Lon], [Nature of Distress]".',
+          'Activate EPIRB beacon, launch red rocket parachute flares, and instruct crew to don life jackets and assume H.E.L.P. (Heat Escape Lessening Posture) in water.'
+        ],
+        after: [
+          'Stay attached to life raft or vessel hull if floating — air search teams spot vessel hulls easier than individual swimmers.',
+          'Contact Coast Guard Maritime Rescue Coordination Center (MRCC Helpline 1554).'
+        ]
+      }
+    };
+
+    const current = preventionData[this.activeSurvivalCategory] || preventionData.cyclone;
+
+    container.innerHTML = `
+      <div class="card glass" style="margin-top: 20px;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <i class="fas fa-shield-halved" style="color:var(--green)"></i>
+            <strong>Calamity Prevention & Disaster Mitigation Command Center</strong>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn ${this.activeSurvivalCategory === 'cyclone' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px;padding:4px 10px" onclick="weatherUI.setPreventionTab('cyclone')">🌀 Cyclones</button>
+            <button class="btn ${this.activeSurvivalCategory === 'tsunami' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px;padding:4px 10px" onclick="weatherUI.setPreventionTab('tsunami')">🌊 Tsunamis</button>
+            <button class="btn ${this.activeSurvivalCategory === 'earthquake' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px;padding:4px 10px" onclick="weatherUI.setPreventionTab('earthquake')">🏚️ Earthquakes</button>
+            <button class="btn ${this.activeSurvivalCategory === 'flood' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px;padding:4px 10px" onclick="weatherUI.setPreventionTab('flood')">🌧️ Floods</button>
+            <button class="btn ${this.activeSurvivalCategory === 'marine' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px;padding:4px 10px" onclick="weatherUI.setPreventionTab('marine')">⚓ Marine Distress</button>
+          </div>
+        </div>
+
+        <div style="padding:16px">
+          <h3 style="color:${current.color};margin-bottom:14px;font-size:16px"><i class="fas fa-shield-virus"></i> ${current.title}</h3>
+          
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px">
+            <!-- Infrastructure & Prevention Measures -->
+            <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:14px;border:1px solid var(--border)">
+              <h4 style="color:var(--accent);margin-bottom:10px;font-size:13px"><i class="fas fa-building-shield"></i> Infrastructure & Prevention Measures</h4>
+              <ul style="padding-left:16px;font-size:12px;line-height:1.6;color:var(--text)">
+                ${current.infrastructure.map(item => `<li style="margin-bottom:6px">${item}</li>`).join('')}
+              </ul>
+            </div>
+
+            <!-- BEFORE Protocol -->
+            <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:14px;border:1px solid var(--border)">
+              <h4 style="color:var(--yellow);margin-bottom:10px;font-size:13px"><i class="fas fa-clock-rotate-left"></i> BEFORE (Preparation Phase)</h4>
+              <ul style="padding-left:16px;font-size:12px;line-height:1.6;color:var(--text)">
+                ${current.before.map(item => `<li style="margin-bottom:6px">${item}</li>`).join('')}
+              </ul>
+            </div>
+
+            <!-- DURING Protocol -->
+            <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:14px;border:1px solid var(--border)">
+              <h4 style="color:var(--red);margin-bottom:10px;font-size:13px"><i class="fas fa-triangle-exclamation"></i> DURING (Emergency Phase)</h4>
+              <ul style="padding-left:16px;font-size:12px;line-height:1.6;color:var(--text)">
+                ${current.during.map(item => `<li style="margin-bottom:6px">${item}</li>`).join('')}
+              </ul>
+            </div>
+
+            <!-- AFTER Protocol -->
+            <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:14px;border:1px solid var(--border)">
+              <h4 style="color:var(--green);margin-bottom:10px;font-size:13px"><i class="fas fa-hand-holding-medical"></i> AFTER (Recovery Phase)</h4>
+              <ul style="padding-left:16px;font-size:12px;line-height:1.6;color:var(--text)">
+                ${current.after.map(item => `<li style="margin-bottom:6px">${item}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+
+          <!-- Emergency Helplines & Go-Bag Kit Bar -->
+          <div style="margin-top:16px;padding:12px;background:rgba(0,180,216,0.08);border-radius:10px;border:1px dashed var(--accent);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div style="font-size:12px">
+              <strong>📞 EMERGENCY HELPLINES:</strong> 
+              <span style="color:var(--accent);margin-left:8px">Indian Coast Guard: <strong>1554</strong></span> | 
+              <span style="color:var(--yellow);margin-left:8px">NDMA Disaster Control: <strong>1078</strong></span> | 
+              <span style="color:var(--green);margin-left:8px">Navy SAR: <strong>022-22751000</strong></span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted)">
+              <i class="fas fa-kit-medical" style="color:var(--red)"></i> 72-Hour Go-Bag: Water, Rations, Flashlight, Radio, EPIRB, First-Aid, Whistle
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  setPreventionTab(category) {
+    this.activeSurvivalCategory = category;
+    this.renderCalamityPreventionSection();
+  }
 }
 
 // Export singleton

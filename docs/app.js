@@ -148,9 +148,9 @@ function drawCanvas() {
     ctx.restore();
   }
 
-  // Trails at zoom >= 8
-  if (zoom >= 8) {
-    ctx.globalAlpha = 0.35; ctx.lineWidth = 1;
+  // Motion Trails for all zoom levels >= 3
+  if (zoom >= 3) {
+    ctx.globalAlpha = 0.55; ctx.lineWidth = 1.5;
     for (const v of vList) {
       if (!v.trail || v.trail.length < 2) continue;
       try {
@@ -167,41 +167,47 @@ function drawCanvas() {
     ctx.globalAlpha = 1;
   }
 
-  // Vessel markers — MarineTraffic-style triangle ship icons
+  // Vessel markers — High-visibility MarineTraffic-style triangle ship icons + speed vectors
   for (const v of vList) {
     try {
       const p = mainMap.latLngToContainerPoint([v.lat, v.lon]);
-      if (p.x < -20 || p.y < -20 || p.x > canvas.width+20 || p.y > canvas.height+20) continue;
+      if (p.x < -30 || p.y < -30 || p.x > canvas.width+30 || p.y > canvas.height+30) continue;
 
-      // Critical = unfriendly inside EEZ at high speed, or has active critical alert
       const isCritical = isCriticalVessel(v);
-      const isUnfriendlyInEEZ = !FRIENDLY_FLAGS.has(v.flag||'') && v.flag !== 'Unknown' &&
-                                 _inIndiaEEZ(v.lat, v.lon);
-
+      const isUnfriendlyInEEZ = !FRIENDLY_FLAGS.has(v.flag||'') && v.flag !== 'Unknown' && _inIndiaEEZ(v.lat, v.lon);
       const color = isCritical ? '#ef476f' : vesselColor(v);
       const angle = (v.heading || 0) * Math.PI / 180;
 
-      // Pulsing red ring for critical vessels (drawn behind the icon)
-      if (isCritical || isUnfriendlyInEEZ) {
-        const ringR = zoom >= 9 ? 14 : 8;
-        const pulse = 0.4 + 0.3 * Math.sin(Date.now() / 400);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, ringR, 0, Math.PI * 2);
-        ctx.strokeStyle = '#ef476f';
-        ctx.lineWidth = isCritical ? 2.5 : 1.5;
-        ctx.globalAlpha = pulse;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-        // Schedule continuous redraw for animation
-        if (!_rafPending) scheduleRedraw();
-      }
+      // Speed vector line projecting ahead of ship
+      const speedLen = Math.min(30, Math.max(8, (v.speed || 10) * 0.8));
+      const endX = p.x + Math.sin(angle) * speedLen;
+      const endY = p.y - Math.cos(angle) * speedLen;
+
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = 0.7;
+      ctx.stroke();
+
+      // Pulsing outer halo for all ships to enhance live movement visibility
+      const ringR = zoom >= 9 ? 12 : zoom >= 5 ? 8 : 5;
+      const pulse = 0.3 + 0.35 * Math.sin(Date.now() / 300);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, ringR, 0, Math.PI * 2);
+      ctx.strokeStyle = isCritical ? '#ef476f' : color;
+      ctx.lineWidth = isCritical ? 2.5 : 1.2;
+      ctx.globalAlpha = pulse;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
 
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(angle);
 
-      if (zoom >= 9) {
-        const h = zoom >= 12 ? 20 : zoom >= 10 ? 15 : 11;
+      if (zoom >= 8) {
+        const h = zoom >= 12 ? 22 : zoom >= 10 ? 16 : 12;
         const w = h * 0.55;
         ctx.beginPath();
         ctx.moveTo(0, -h);
@@ -212,29 +218,22 @@ function drawCanvas() {
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.95;
         ctx.fill();
-        ctx.strokeStyle = isCritical ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.5)';
-        ctx.lineWidth = isCritical ? 1.5 : 0.8;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
         ctx.stroke();
-      } else if (zoom >= 5) {
-        // Medium triangle
-        ctx.beginPath();
-        ctx.moveTo(0, -7);
-        ctx.lineTo(4, 5);
-        ctx.lineTo(-4, 5);
-        ctx.closePath();
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.9;
-        ctx.fill();
       } else {
-        // Small triangle even at world zoom — no circles
+        // Medium/Small directional triangle visible at world/ocean zoom
         ctx.beginPath();
-        ctx.moveTo(0, -5);
-        ctx.lineTo(3, 4);
-        ctx.lineTo(-3, 4);
+        ctx.moveTo(0, -8);
+        ctx.lineTo(5, 6);
+        ctx.lineTo(-5, 6);
         ctx.closePath();
         ctx.fillStyle = color;
-        ctx.globalAlpha = 0.85;
+        ctx.globalAlpha = 0.95;
         ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
       }
 
       ctx.restore();
@@ -242,21 +241,24 @@ function drawCanvas() {
     } catch {}
   }
 
-  // Labels at zoom >= 12
-  if (zoom >= 12) {
-    ctx.font = '10px Segoe UI,sans-serif'; ctx.globalAlpha = 0.9;
+  // Vessel labels visible at zoom >= 5 or for active vessels
+  if (zoom >= 5) {
+    ctx.font = 'bold 10px Segoe UI,sans-serif'; ctx.globalAlpha = 0.95;
     for (const v of vList) {
       try {
         const p = mainMap.latLngToContainerPoint([v.lat, v.lon]);
         if (p.x < 0 || p.y < 0 || p.x > canvas.width || p.y > canvas.height) continue;
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3;
-        ctx.fillText(v.name || v.mmsi, p.x + 10, p.y + 4);
+        ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 4;
+        ctx.fillText(v.name || v.mmsi, p.x + 8, p.y + 3);
         ctx.shadowBlur = 0;
       } catch {}
     }
     ctx.globalAlpha = 1;
   }
+
+  // Continuous animation loop for real-time ship movement
+  if (!_rafPending) scheduleRedraw();
 }
 
 // ── Auth / Init ───────────────────────────────────────────────────────────────
@@ -1373,6 +1375,7 @@ async function updateWeatherData(lat, lon) {
     
     // Update UI
     weatherUI.renderWeatherDashboard(weather, forecast, cyclones);
+    weatherUI.renderCalamityPreventionSection();
     weatherUI.renderHistoricalView(disasters);
     
     // Update map
